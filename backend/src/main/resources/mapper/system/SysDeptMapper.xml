@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mogo.project.modules.system.mapper.SysDeptMapper">
+    <select id="selectDeptList" parameterType="com.mogo.project.modules.system.model.entity.SysDept" resultType="com.mogo.project.modules.system.model.entity.SysDept">
+        SELECT
+        d.id,
+        d.parent_id,
+        d.ancestors,
+        d.dept_name,
+        d.order_num,
+        d.leader_id,  -- 查出 ID
+        d.status,
+        d.create_time,
+        u.username as leader_name, -- 关联查出姓名
+<!--        u.phone,     &#45;&#45; 顺便把负责人的电话也查出来-->
+        u.email as email
+        FROM sys_dept d
+        LEFT JOIN sys_user u ON d.leader_id = u.id
+        WHERE d.delete_flag = 0
+        <if test="deptName != null and deptName != ''">
+            AND d.dept_name like concat('%', #{deptName}, '%')
+        </if>
+        ORDER BY d.parent_id, d.order_num
+    </select>
+
+    <select id="selectChildrenDeptById" resultType="com.mogo.project.modules.system.model.entity.SysDept">
+        select * from sys_dept where parent_id = #{deptId}
+    </select>
+</mapper>

@@ -1,0 +1,66 @@
+server:
+  port: 29020
+
+spring:
+  cache:
+    type: redis
+  application:
+    name: mogo-project
+  # 数据库配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/mogo_db?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&nullCatalogMeansCurrent=true
+    username: root
+    password: 123 # ⚠️ 修改这里
+  # Redis 配置
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: # 如果有密码请填写
+      database: 0
+
+
+# MyBatis Plus 配置
+mybatis-plus:
+  global-config:
+    db-config:
+      logic-delete-field: deleteFlag  # 实体类里的字段名
+      logic-delete-value: 1        # 删除后的值 (RuoYi习惯用2)
+      logic-not-delete-value: 0    # 未删除的值
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: com.mogo.project.modules.**.entity # 扫描实体类
+  configuration:
+    map-underscore-to-camel-case: true # 开启驼峰命名转换
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# 自定义 JWT 配置 (后续在代码中读取)
+jwt:
+  header: Authorization
+  secret: abcdefghijklmnopqrstuvwxyz0123456789abcdef # ⚠️ 必须足够长(32+字符)用于 HS256 算法
+  access-token-expiration: 1800000 #3000 token30分钟
+  refresh-token-expiration: 604800000 #20000 刷新token 7天
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+minio:
+  endpoint: http://localhost:9000
+  access-key: admin
+  secret-key: admin123
+  bucket-name: mogo
+aviator:
+  #公式计算
+  # 是否强制将小数解析为 BigDecimal (true/false)
+  parse-decimal: true
+  # 计算精度: DECIMAL32, DECIMAL64, DECIMAL128, UNLIMITED
+  math-context: DECIMAL128
+dingtalk:
+  app-key: "1"
+  app-secret: "2"
+  space-id: "3"
+  target-folder-id: "0"
+  operator-union-id: "4"
+
+
+

@@ -1,0 +1,84 @@
+.formula-page .el-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.formula-page .el-card__body {
+  flex: 1;
+  min-height: 0;
+  padding: 0 !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.formula-page .el-card__header {
+  padding: 4px 12px !important;
+  min-height: 32px !important;
+  line-height: 24px !important;
+  display: flex;
+  align-items: center;
+}
+.formula-page .el-card__header > div {
+  height: 24px;
+  display: flex;
+  align-items: center;
+}
+.formula-page .el-card__header .font-bold {
+  font-size: 16px !important;
+  line-height: 24px !important;
+}
+.formula-page .el-card__header .el-button {
+  padding: 0 8px !important;
+  min-width: 24px !important;
+  height: 24px !important;
+  font-size: 12px !important;
+  line-height: 24px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.formula-page .el-card__header .flex {
+  display: flex !important;
+  align-items: center !important;
+}
+.formula-page .el-form-item {
+  margin-bottom: 4px !important;
+}
+.formula-page .el-form-item--small {
+  margin-bottom: 4px !important;
+}
+.formula-page .el-form-item__label {
+  padding: 2px 0 !important;
+  line-height: 20px !important;
+}
+.formula-page .el-form-item__content {
+  line-height: 20px !important;
+  min-height: 24px !important;
+}
+.formula-page .el-input--small .el-input__inner {
+  height: 24px !important;
+  line-height: 24px !important;
+}
+.formula-page .el-textarea--small .el-textarea__inner {
+  min-height: 28px !important;
+  line-height: 16px !important;
+}
+
+/* 特定 div 容器样式 */
+.formula-page .grid.grid-cols-7 {
+  gap-y: 0 !important;
+}
+
+.formula-page .flex-1.overflow-auto {
+  padding: 1px !important;
+}
+
+.formula-page .bg-blue-50 {
+  padding: 1px !important;
+  margin-top: 1px !important;
+}
+
+/* 确保不影响其他 div 元素 */
+.formula-page div:not(.grid):not(.flex-1):not(.bg-blue-50):not(.el-card__header):not(.el-form-item__content):not(.el-input__wrapper):not(.el-select__wrapper):not(.el-input-number) {
+  /* 保持默认样式 */
+}

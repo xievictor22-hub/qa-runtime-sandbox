@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mogo.project.modules.quote.domain.order.mapper.QuoteOrderMapper">
+    <resultMap id="BaseResultMap" type="com.mogo.project.modules.quote.domain.order.entity.QuoteOrder">
+        <!--@mbg.generated-->
+        <!--@Table quote_order-->
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="project_code" jdbcType="VARCHAR" property="projectCode" />
+        <result column="project_type" jdbcType="VARCHAR" property="projectType" />
+        <result column="project_name" jdbcType="VARCHAR" property="projectName" />
+        <result column="dept_id" jdbcType="BIGINT" property="deptId" />
+        <result column="status" jdbcType="VARCHAR" property="status" />
+        <result column="current_handler_id" jdbcType="BIGINT" property="currentHandlerId" />
+        <result column="tax_rate" jdbcType="DECIMAL" property="taxRate" />
+        <result column="customer_name" jdbcType="VARCHAR" property="customerName" />
+        <result column="total_material_price" jdbcType="DECIMAL" property="totalMaterialPrice" />
+        <result column="total_install_price" jdbcType="DECIMAL" property="totalInstallPrice" />
+        <result column="other_fees_json" jdbcType="VARCHAR" property="otherFeesJson" />
+        <result column="final_total_price" jdbcType="DECIMAL" property="finalTotalPrice" />
+        <result column="create_by" jdbcType="BIGINT" property="createBy" />
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+        <result column="update_by" jdbcType="BIGINT" property="updateBy" />
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+        <result column="delete_flag" jdbcType="BOOLEAN" property="deleteFlag" />
+        <result column="remark" jdbcType="VARCHAR" property="remark" />
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        id, project_code, project_type, project_name, dept_id, `status`, current_handler_id,
+        tax_rate, customer_name, total_material_price, total_install_price, other_fees_json,
+        final_total_price, create_by, create_time, update_by, update_time, delete_flag, remark
+    </sql>
+
+    <select id="selectOrderList" resultType="com.mogo.project.modules.quote.domain.order.entity.QuoteOrder">
+        SELECT d.* FROM quote_order d
+        LEFT JOIN sys_user u ON d.create_by = u.id
+        WHERE d.delete_flag = '0'
+        <if test="query.projectName != null and query.projectName != ''">
+            AND d.project_name LIKE concat('%', #{query.projectName}, '%')
+        </if>
+        <if test="query.status != null and query.status != ''">
+            AND d.status = #{query.status}
+        </if>
+        ${query.params.dataScope}
+        ORDER BY d.create_time DESC
+    </select>
+</mapper>

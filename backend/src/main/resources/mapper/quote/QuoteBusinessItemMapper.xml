@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mogo.project.modules.quote.domain.order.mapper.QuoteBusinessItemMapper">
+
+    <resultMap id="BaseResultMap" type="com.mogo.project.modules.quote.domain.order.entity.QuoteBusinessItem">
+        <id column="id" property="id" />
+        <result column="quote_id" property="quoteId" />
+        <result column="detail_id" property="detailId" />
+        <result column="business_version" property="businessVersion" />
+        <result column="original_total" property="originalTotal" />
+        <result column="discount_rate" property="discountRate" />
+        <result column="discount_total" property="discountTotal" />
+        <result column="final_total" property="finalTotal" />
+        <result column="lock_status" property="lockStatus" />
+        <result column="remark" property="remark" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+
+        <result column="product_name" property="productName" />
+        <result column="spec" property="spec" />
+        <result column="unit" property="unit" />
+        <result column="quantity" property="quantity" />
+    </resultMap>
+
+    <select id="selectBusinessList" resultMap="BaseResultMap">
+        SELECT
+        b.*,
+        d.product_name,
+        d.spec,
+        d.unit,
+        d.quantity
+        FROM quote_business_item b
+        LEFT JOIN quote_detail d ON b.detail_id = d.id
+        WHERE b.quote_id = #{quoteId}
+        AND b.business_version = #{version}
+        ORDER BY d.row_num ASC
+    </select>
+
+</mapper>
