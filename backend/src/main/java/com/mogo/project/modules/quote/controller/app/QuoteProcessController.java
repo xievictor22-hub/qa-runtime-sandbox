@@ -2,6 +2,9 @@ package com.mogo.project.modules.quote.controller.app;
 
 import com.mogo.project.common.response.ApiResponse;
 import com.mogo.project.common.exception.ServiceException;
+import com.mogo.project.common.annotation.Log;
+import com.mogo.project.common.enums.BusinessType;
+import com.mogo.project.common.util.SecurityUtils;
 import com.mogo.project.modules.quote.domain.process.dto.QuoteProcessDto;
 import com.mogo.project.modules.quote.domain.process.service.IQuoteProcessService;
 import com.mogo.project.modules.quote.domain.process.vo.QuoteProcessUserVO;
@@ -12,10 +15,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Tag(name = "报价单-流程流转")
@@ -28,11 +33,15 @@ public class QuoteProcessController {
     private final IQuoteProcessService processService;
 
     private final SysUserService sysUserService;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @PreAuthorize("hasAuthority('quote:process:submit')")
+    @Log(title = "提交审核", businessType = BusinessType.UPDATE)
     @Operation(summary = "提交审核")
     @PostMapping("/submit")
-    public ApiResponse<Void> submit(@Valid @RequestBody QuoteProcessDto dto) {
+    public ApiResponse<Void> submit(@RequestHeader(value = "X-Idempotency-Key", required = false) String idempotencyKey,
+                                    @Valid @RequestBody QuoteProcessDto dto) {
+        guardIdempotent("submit", dto.getId(), idempotencyKey);
         if (dto.getNextHandlerId() == null) {
             throw new ServiceException("下一步处理人不能为空");
         }
@@ -41,9 +50,12 @@ public class QuoteProcessController {
     }
 
     @PreAuthorize("hasAuthority('quote:process:audit-pass')")
+    @Log(title = "审核通过", businessType = BusinessType.UPDATE)
     @Operation(summary = "审核通过")
     @PostMapping("/audit-pass")
-    public ApiResponse<Void> auditPass(@Valid @RequestBody QuoteProcessDto dto) {
+    public ApiResponse<Void> auditPass(@RequestHeader(value = "X-Idempotency-Key", required = false) String idempotencyKey,
+                                       @Valid @RequestBody QuoteProcessDto dto) {
+        guardIdempotent("audit-pass", dto.getId(), idempotencyKey);
         if (dto.getNextHandlerId() == null) {
             throw new ServiceException("下一步处理人不能为空");
         }
@@ -52,17 +64,23 @@ public class QuoteProcessController {
     }
 
     @PreAuthorize("hasAuthority('quote:process:audit-reject')")
+    @Log(title = "审核驳回", businessType = BusinessType.UPDATE)
     @Operation(summary = "审核驳回")
     @PostMapping("/audit-reject")
-    public ApiResponse<Void> auditReject(@Valid @RequestBody QuoteProcessDto dto) {
+    public ApiResponse<Void> auditReject(@RequestHeader(value = "X-Idempotency-Key", required = false) String idempotencyKey,
+                                         @Valid @RequestBody QuoteProcessDto dto) {
+        guardIdempotent("audit-reject", dto.getId(), idempotencyKey);
         processService.auditReject(dto.getId(), dto.getAuditComment());
         return ApiResponse.success(null);
     }
 
     @PreAuthorize("hasAuthority('quote:process:new-version')")
+    @Log(title = "创建新报价版本", businessType = BusinessType.UPDATE)
     @Operation(summary = "创建新报价版本")
     @PostMapping("/{id}/new-version")
-    public ApiResponse<Void> createNewVersion(@PathVariable Long id) {
+    public ApiResponse<Void> createNewVersion(@PathVariable Long id,
+                                              @RequestHeader(value = "X-Idempotency-Key", required = false) String idempotencyKey) {
+        guardIdempotent("new-version", id, idempotencyKey);
         processService.createNewQuoteVersion(id);
         return ApiResponse.success(null);
     }
@@ -84,6 +102,20 @@ public class QuoteProcessController {
             return vo;
         }).collect(Collectors.toList());
         return ApiResponse.success(result);
+    }
+
+    /**
+     * 幂等保护（可选）：前端传 X-Idempotency-Key 时生效，防止短时间重复点击。
+     */
+    private void guardIdempotent(String action, Long quoteId, String key) {
+        if (key == null || key.isBlank()) {
+            return;
+        }
+        String redisKey = "quote:process:idempotent:" + SecurityUtils.getUserId() + ":" + action + ":" + quoteId + ":" + key;
+        Boolean first = redisTemplate.opsForValue().setIfAbsent(redisKey, 1, 15, TimeUnit.SECONDS);
+        if (Boolean.FALSE.equals(first)) {
+            throw new ServiceException(409, "请求重复提交，请稍后重试");
+        }
     }
 
 }
