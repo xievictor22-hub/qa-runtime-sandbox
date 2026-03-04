@@ -6,27 +6,6 @@ spring:
     import: optional:configtree:/run/secrets/quote/
   cache:
     type: redis
-  mail:
-    host: smtp.qq.com           # QQ 邮箱 SMTP 服务器
-    port: 465                   # QQ 邮箱 SSL 端口
-    username: 1435208701@qq.com     # 你的完整 QQ 邮箱
-    password: xtamqrxqbpfubacc
-    protocol: smtp
-    default-encoding: UTF-8
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-            required: true
-          ssl:
-            enable: true        # 必须开启 SSL，QQ 邮箱强制要求
-            trust: smtp.qq.com
-          socketFactory:
-            port: 465
-            class: javax.net.ssl.SSLSocketFactory
-            fallback: false
   application:
     name: mogo-project
   # 数据库配置
