@@ -78,15 +78,29 @@ app.use(ElementPlus)
 // 捕获 Vue 实例内部的错误
 app.config.errorHandler = (err, instance, info) => {
   console.error('[VueError]', err, info)
-  reportClientError({ type: 'vue', message: String(err), info })
+  void reportClientError({ type: 'vue', message: String(err), info })
 }
 // 全局 JS 错误处理
 window.addEventListener('error', (event) => {
-  reportClientError({ type: 'js', message: event.message, stack: event.error?.stack })
+  if (String(event.filename || '').includes('/api/monitor/client-error')) return
+  void reportClientError({ type: 'js', message: event.message, stack: event.error?.stack })
 })
 // 全局 Promise 错误处理
 window.addEventListener('unhandledrejection', (event) => {
-  reportClientError({ type: 'promise', message: String(event.reason) })
+  const reason: any = event.reason
+  const reqUrl = reason?.config?.url || ''
+  if (String(reqUrl).includes('/monitor/client-error/report')) return
+
+  void reportClientError({
+    type: 'promise',
+    message: String(reason?.message || reason),
+    stack: reason?.stack,
+    extra: {
+      name: reason?.name,
+      url: reqUrl,
+      status: reason?.response?.status
+    }
+  })
 })
 // 6. 注册自定义的按钮权限指令,字段名称与v-permission保持一致
 app.directive('permission', hasPerm)
