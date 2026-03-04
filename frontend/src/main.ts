@@ -69,10 +69,25 @@ app.use(formCreate)
 app.use(FcDesigner)
 // 全局注册 DictTag
 import DictTag from '@/components/DictTag/index.vue'
+import { reportClientError } from './api/monitor/client-error'
 app.component('DictTag', DictTag)
 app.use(pinia)
 app.use(router)
 app.use(ElementPlus)
+// 全局错误处理
+// 捕获 Vue 实例内部的错误
+app.config.errorHandler = (err, instance, info) => {
+  console.error('[VueError]', err, info)
+  reportClientError({ type: 'vue', message: String(err), info })
+}
+// 全局 JS 错误处理
+window.addEventListener('error', (event) => {
+  reportClientError({ type: 'js', message: event.message, stack: event.error?.stack })
+})
+// 全局 Promise 错误处理
+window.addEventListener('unhandledrejection', (event) => {
+  reportClientError({ type: 'promise', message: String(event.reason) })
+})
 // 6. 注册自定义的按钮权限指令,字段名称与v-permission保持一致
 app.directive('permission', hasPerm)
 

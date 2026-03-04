@@ -75,7 +75,7 @@ service.interceptors.response.use(
     if (error.response){
       switch (error.response.status) {
         case 401:
-          return authManager.handle401(error.config, service)
+          return authManager.handle401(error, service)
         case 403:
           msg = '没有权限访问该资源'
           break

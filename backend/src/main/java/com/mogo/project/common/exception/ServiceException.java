@@ -42,6 +42,11 @@ public final class ServiceException extends RuntimeException {
         this.message = message;
         this.code = code;
     }
+    public ServiceException( Integer code,String message) {
+        super(message);
+        this.message = message;
+        this.code = code;
+    }
 
     /**
      * 使用 ResultCode 枚举 (最推荐)

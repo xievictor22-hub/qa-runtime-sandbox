@@ -33,7 +33,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
-            throws  IOException {
+            throws ServletException, IOException {
         try {
             // 使用 TokenService 获取 Redis 中的用户信息
             LoginUser loginUser = tokenService.getLoginUser(request);
@@ -50,8 +50,6 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
                     // 设置到 Security 上下文
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
-//            }
-
             chain.doFilter(request, response);
         }catch (io.jsonwebtoken.ExpiredJwtException e) {
             // ★★★ 捕获过期异常，手动返回 JSON 401 ★★★

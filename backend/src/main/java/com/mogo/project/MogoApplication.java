@@ -1,6 +1,6 @@
 package com.mogo.project; // ⚠️ 请修改为您实际的根包名
 
-import jakarta.annotation.PostConstruct;
+
 import lombok.extern.slf4j.Slf4j;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
@@ -9,10 +9,11 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.TimeZone;
+
 
 @Slf4j
 @SpringBootApplication(exclude = {
@@ -23,6 +24,7 @@ import java.util.TimeZone;
 @MapperScan("com.mogo.project.**.mapper")
 @EnableAsync //开启多线程
 @EnableCaching // 开启缓存注解支持
+@EnableScheduling // 开启定时任务（用于归档清理）
 public class MogoApplication {
 
     public static void main(String[] args) throws UnknownHostException {

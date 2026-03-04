@@ -50,6 +50,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 允许登录、注册接口匿名访问
                         .requestMatchers("/auth/login","/auth/refresh").permitAll()
+                        .requestMatchers("/monitor/client-error/report").permitAll()
                         // 允许 Swagger 文档匿名访问
                         .requestMatchers("/static/**","/doc.html","/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         // 允许静态资源

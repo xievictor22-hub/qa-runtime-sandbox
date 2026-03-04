@@ -1,6 +1,7 @@
 package com.mogo.project.modules.auth.controller;
 
 import com.mogo.project.common.annotation.Anonymous;
+import com.mogo.project.common.annotation.RateLimit;
 import com.mogo.project.common.exception.ServiceException;
 import com.mogo.project.common.response.ApiResponse;
 import com.mogo.project.modules.auth.dto.LoginDto;
@@ -49,7 +50,7 @@ public class AuthController {
     @Value("${jwt.refresh-token-expiration:604800000}")
     private long REFRESH_TOKEN_EXPIRATION;
 
-
+    @RateLimit(count = 10, seconds = 60, message = "登录过于频繁，请1分钟后再试")
     @Anonymous
     @Operation(summary = "用户登录", description = "返回 Token")
     @PostMapping("/login")
@@ -58,6 +59,7 @@ public class AuthController {
         return ApiResponse.success( result,"登录成功");
     }
 
+    @RateLimit(count = 10, seconds = 60, message = "登录过于频繁，请1分钟后再试")
     @Anonymous
     @Operation(summary = "退出登录")
     @PostMapping("/logout")
@@ -69,6 +71,7 @@ public class AuthController {
         return ApiResponse.success();
     }
 
+    @RateLimit(count = 10, seconds = 60, message = "登录过于频繁，请1分钟后再试")
     @Anonymous
     @Operation(summary = "token刷新", description = "返回 Token")
     @PostMapping("/refresh")
@@ -84,15 +87,21 @@ public class AuthController {
             return ApiResponse.error(401,"refreshToken无效或已过期");
         }
         String uuid = (String)c.get("login_user_key");
+        String tokenKey = tokenService.getTokenKey(uuid);
+        LoginUser loginUser = (LoginUser) redisTemplate.opsForValue().get(tokenKey);
+        if(loginUser == null) {
+            return ApiResponse.error(401,"会话不存在或已过期，请重新登录");
+        }
         String jti = (String)c.get("jti");
         String deviceId = (String)c.get("device_id");
         String key = tokenService.getRefreshJtiKey(uuid);
         String currentJti = (String)redisTemplate.opsForValue().get(key);
 
+
         if(currentJti==null)return ApiResponse.error(401,"会话已失效，请重新登录");
         if(!currentJti.equals(jti)){
             //盗用，重放
-            redisTemplate.delete(tokenService.getTokenKey(uuid));//删除登录信息
+            redisTemplate.delete(tokenKey);//删除登录信息
             redisTemplate.delete(key);//删除刷新信息
             redisTemplate.delete(tokenService.getUserLastTokenKey(c.getSubject(),deviceId));
             return ApiResponse.error(401,"refreshToken已失效（疑似盗用），请重新登录");

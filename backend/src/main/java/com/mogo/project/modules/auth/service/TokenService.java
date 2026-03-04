@@ -109,27 +109,25 @@ public class TokenService {
      */
     public void refreshUserCache(String username) {
         // 1. 查找该用户当前有效的 Token UUID
-        String uuid = (String) redisTemplate.opsForValue().get(USER_LAST_TOKEN_KEY + username);
+        String prefix = USER_LAST_TOKEN_KEY + username + ":";
+        //通用匹配所有设备
+        Set<String> keys = redisTemplate.keys(prefix + "*"); // 可替换为 scan 实现
+        if (keys == null || keys.isEmpty()) return;
 
-        if (StringUtils.hasText(uuid)) {
+        for (String lastKey : keys) {
+            String uuid = (String) redisTemplate.opsForValue().get(lastKey);
+            if (!StringUtils.hasText(uuid)) continue;
+
             String userKey = getTokenKey(uuid);
-
-            // 2. 获取 Redis 中的旧 LoginUser
             LoginUser loginUser = (LoginUser) redisTemplate.opsForValue().get(userKey);
+            if (loginUser == null) continue;
 
-            if (loginUser != null) {
-                // 3. 重新查询数据库中的最新权限
-                List<String> newPermissions = sysMenuMapper.selectPermsByUserId(loginUser.getSysUser().getId());
+            List<String> newPermissions = sysMenuMapper.selectPermsByUserId(loginUser.getSysUser().getId());
+            loginUser.setPermissions(newPermissions);
 
-                // 4. 更新 LoginUser 对象
-                loginUser.setPermissions(newPermissions);
-
-                // 5. 写回 Redis (保持原有的过期时间)
-                // 获取剩余过期时间
-                Long expire = redisTemplate.getExpire(userKey, TimeUnit.SECONDS);
-                if (expire != null && expire > 0) {
-                    redisTemplate.opsForValue().set(userKey, loginUser, expire, TimeUnit.SECONDS);
-                }
+            Long expire = redisTemplate.getExpire(userKey, TimeUnit.SECONDS);
+            if (expire != null && expire > 0) {
+                redisTemplate.opsForValue().set(userKey, loginUser, expire, TimeUnit.SECONDS);
             }
         }
     }

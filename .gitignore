@@ -26,8 +26,6 @@ logs/
 Thumbs.db
 .DS_Store
 
-
-
 # Temporary files
 tmp/
 temp/
