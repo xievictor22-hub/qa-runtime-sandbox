@@ -25,6 +25,7 @@ export interface QuoteUpdateMessage {
 export function useWebSocket() {
   const client = ref<Client | null>(null)
   const isConnected = ref(false)
+  const hasShownNetworkError = ref(false)
   const userStore = useUserStore()
 
   /**
@@ -81,6 +82,7 @@ export function useWebSocket() {
     // 连接成功回调
     client.value.onConnect = (frame) => {
       isConnected.value = true
+      hasShownNetworkError.value = false
       // ✅ 接收服务端系统消息（踢下线）
   client.value?.subscribe('/user/queue/system', (msg) => {
     try {
@@ -125,7 +127,10 @@ export function useWebSocket() {
     // 连接失败处理
     client.value.onWebSocketError = (error) => {
       console.error('WebSocket 连接失败:', error)
-      ElMessage.error('WebSocket 连接失败，请检查网络')
+      if (!hasShownNetworkError.value) {
+        ElMessage.error('WebSocket 连接失败，请检查网络')
+        hasShownNetworkError.value = true
+      }
       onError?.(error)
     }
 
