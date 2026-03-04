@@ -18,8 +18,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -121,8 +119,9 @@ public class AuthController {
         TokenResponse tokenResponse = new TokenResponse();
         tokenResponse.setRefreshToken(newRefresh);
         tokenResponse.setAccessToken(newAccess);
-        LoginUser principal = (LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        tokenService.refreshToken(principal);
+        // /auth/refresh 允许匿名访问，SecurityContext 中 principal 可能是 "anonymousUser"（String）
+        // 这里应使用已通过 refreshToken + Redis 校验过的 loginUser 续期
+        tokenService.refreshToken(loginUser);
         return ApiResponse.success(tokenResponse);
     }
 }
