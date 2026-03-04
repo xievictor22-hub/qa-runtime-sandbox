@@ -1,5 +1,12 @@
 import request from '@/api/index'
 
+function createIdempotencyKey(action: string, quoteId: string) {
+  const random = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`
+  return `${action}:${quoteId}:${random}`
+}
+
 export interface ProcessDto {
   id: string // quoteId
   nextHandlerId?: number
@@ -18,7 +25,10 @@ export function submitAudit(data: ProcessDto) {
   return request({
     url: '/quote/process/submit',
     method: 'post',
-    data
+    data,
+    headers: {
+      'X-Idempotency-Key': createIdempotencyKey('submit', data.id)
+    }
   })
 }
 
@@ -27,7 +37,10 @@ export function auditPass(data: ProcessDto) {
   return request({
     url: '/quote/process/audit-pass',
     method: 'post',
-    data
+    data,
+    headers: {
+      'X-Idempotency-Key': createIdempotencyKey('audit-pass', data.id)
+    }
   })
 }
 
@@ -36,7 +49,10 @@ export function auditReject(data: ProcessDto) {
   return request({
     url: '/quote/process/audit-reject',
     method: 'post',
-    data
+    data,
+    headers: {
+      'X-Idempotency-Key': createIdempotencyKey('audit-reject', data.id)
+    }
   })
 }
 
@@ -44,7 +60,10 @@ export function auditReject(data: ProcessDto) {
 export function createNewVersion(quoteId: string) {
   return request({
     url: `/quote/process/${quoteId}/new-version`,
-    method: 'post'
+    method: 'post',
+    headers: {
+      'X-Idempotency-Key': createIdempotencyKey('new-version', quoteId)
+    }
   })
 }
 
