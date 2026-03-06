@@ -10,6 +10,7 @@ import com.mogo.project.modules.quote.domain.order.mapper.QuoteDetailMapper;
 
 import com.mogo.project.modules.quote.domain.order.entity.QuoteDetail;
 import com.mogo.project.modules.quote.domain.order.entity.QuoteDetailItem;
+import com.mogo.project.modules.quote.domain.order.constant.QuoteMatchConstant;
 import com.mogo.project.modules.quote.domain.order.vo.QuoteDetailItemVo;
 import com.mogo.project.modules.quote.domain.order.service.IQuoteDetailItemService;
 
@@ -129,10 +130,25 @@ public class QuoteDetailItemServiceImpl extends ServiceImpl<QuoteDetailItemMappe
                 .filter(java.util.Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // 2.1 按工艺拆分安装/生产总成本（避免 process1 为 null 导致 NPE）
+        BigDecimal installTotalCost = items.stream()
+                .filter(detailItem -> QuoteMatchConstant.PROCESS_INSTALL.equals(detailItem.getProcess1()))
+                .map(QuoteDetailItem::getTotalPrice)
+                .filter(java.util.Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal factoryTotalCost = items.stream()
+                .filter(detailItem -> !QuoteMatchConstant.PROCESS_INSTALL.equals(detailItem.getProcess1()))
+                .map(QuoteDetailItem::getTotalPrice)
+                .filter(java.util.Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         // 3. 更新父对象
         QuoteDetail parent = quoteDetailMapper.selectById(detailId);
         if (parent != null) {
             parent.setSummaryPrice(totalCost); // 子件的总价就是明细的总价
+            parent.setInstallTotal(installTotalCost);
+            parent.setFactoryTotal(factoryTotalCost);
             // 反算单价：如果父件数量为0，避免除以零异常
             if (parent.getQuantity() != null && parent.getQuantity().compareTo(BigDecimal.ZERO)  > 0) {
                 // 单价 = 总价 / 数量 (保留2位小数，四舍五入)
@@ -142,8 +158,12 @@ public class QuoteDetailItemServiceImpl extends ServiceImpl<QuoteDetailItemMappe
                         RoundingMode.HALF_UP
                 );
                 parent.setDistPrice(unitPrice);
+                parent.setInstallCostUnitPrice(installTotalCost.divide(parent.getQuantity(), 2, RoundingMode.HALF_UP));
+                parent.setFactoryCostUnitPrice(factoryTotalCost.divide(parent.getQuantity(), 2, RoundingMode.HALF_UP));
             } else {
                 parent.setDistPrice(BigDecimal.ZERO);
+                parent.setInstallCostUnitPrice(BigDecimal.ZERO);
+                parent.setFactoryCostUnitPrice(BigDecimal.ZERO);
             }
             quoteDetailMapper.updateById(parent);
         }
