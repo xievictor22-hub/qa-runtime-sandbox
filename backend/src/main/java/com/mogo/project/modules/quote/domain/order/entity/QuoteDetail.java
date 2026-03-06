@@ -100,18 +100,17 @@ public class QuoteDetail extends BaseEntity {
 
     private BigDecimal factoryTotal;     // 出厂总价
     private BigDecimal factoryProfit;    // 出厂利润
+    private BigDecimal factoryCostUnitPrice; //生产成本单价
+    private BigDecimal factoryDiscounts; //生产折扣
+    private BigDecimal factoryUnitPrice; //生产单价
+    private BigDecimal factoryProfitRate; //生产打点(报价单全选)
+
     private BigDecimal installTotal;     // 安装总价
     private BigDecimal installProfit;    // 安装利润
-    private BigDecimal salesTotal;       // 销售总价
-    private BigDecimal taxAmount;        // 税金
-
-    // --- 客户价格 (0.00部分) ---
-    private BigDecimal custUnitPrice;  //客户单价
-    private BigDecimal custTotalPrice; //客户总价
-    private BigDecimal custFactoryUnit; //客户工厂单价
-    private BigDecimal custFactoryTotal; //客户工厂总价
-    private BigDecimal custInstallUnit; //客户安装单价
-    private BigDecimal custInstallTotal; //客户安装总价
+    private BigDecimal installCostUnitPrice; //安装成本单价
+    private BigDecimal installDiscounts; //安装折扣
+    private BigDecimal installUnitPrice; //安装单价
+    private BigDecimal installProfitRate; //安装打点(报价单全选)
 
     // --- 备注与杂项 ---
     private String deptOwner;            // 承担部门

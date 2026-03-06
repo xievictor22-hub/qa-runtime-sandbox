@@ -10,11 +10,11 @@ import com.mogo.project.modules.quote.domain.order.entity.QuoteBusinessItem;
 import com.mogo.project.modules.quote.domain.order.entity.QuoteDetail;
 import com.mogo.project.modules.quote.domain.order.entity.QuoteOrder;
 import com.mogo.project.modules.quote.domain.order.service.IQuoteBusinessService;
+import com.mogo.project.modules.quote.domain.order.service.component.QuoteBusinessPriceCalculator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,6 +28,7 @@ public class QuoteBusinessServiceImpl extends ServiceImpl<QuoteBusinessItemMappe
 
     private final QuoteOrderMapper quoteOrderMapper;
     private final QuoteDetailMapper quoteDetailMapper;
+    private final QuoteBusinessPriceCalculator quoteBusinessPriceCalculator;
 
     /**
      *查询当前版本的报价单的业务报价信息
@@ -72,25 +73,9 @@ public class QuoteBusinessServiceImpl extends ServiceImpl<QuoteBusinessItemMappe
         }
 
         // 3. 转换为业务明细 (QuoteBusinessItem)
-        List<QuoteBusinessItem> businessItems = costDetails.stream().map(detail -> {
-            QuoteBusinessItem item = new QuoteBusinessItem();
-            item.setQuoteId(quoteId);
-            item.setDetailId(detail.getId()); // 关联原始明细ID
-            item.setBusinessVersion(version);         // 设置业务版本 (例如 1)
-
-            // --- 价格初始化逻辑 ---
-            // 初始时：原价 = 出厂总价
-            item.setOriginalTotal(detail.getFactoryTotal());
-            // 初始时：折扣率 = 100% (不打折)
-            item.setDiscountRate(new BigDecimal("100"));
-            // 初始时：折扣后价格 = 原价
-            item.setDiscountTotal(detail.getFactoryTotal());
-            // 初始时：最终成交价 = 原价
-            item.setFinalTotal(detail.getFactoryTotal());
-
-            item.setLockStatus(false); // 初始未锁，允许业务员编辑
-            return item;
-        }).collect(Collectors.toList());
+        List<QuoteBusinessItem> businessItems = costDetails.stream()
+                .map(detail -> quoteBusinessPriceCalculator.initFromDetail(quoteId, version, detail))
+                .collect(Collectors.toList());
 
         // 4. 批量保存
         this.saveBatch(businessItems);
@@ -104,7 +89,12 @@ public class QuoteBusinessServiceImpl extends ServiceImpl<QuoteBusinessItemMappe
     @Transactional(rollbackFor = Exception.class)
     public void batchUpdateBusinessItems(List<QuoteBusinessItem> items) {
         if (items == null || items.isEmpty()) return;
-        //todo 建议校验 item.getLockStatus() == 0
+        for (QuoteBusinessItem item : items) {
+            if (Boolean.TRUE.equals(item.getLockStatus())) {
+                throw new ServiceException("已锁定数据不允许修改");
+            }
+            quoteBusinessPriceCalculator.recalculate(item, null);
+        }
         this.updateBatchById(items);
     }
 }

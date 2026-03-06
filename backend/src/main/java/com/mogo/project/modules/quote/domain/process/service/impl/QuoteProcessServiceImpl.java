@@ -17,6 +17,7 @@ import com.mogo.project.modules.quote.domain.order.entity.QuoteOrder;
 import com.mogo.project.modules.quote.core.convert.enums.QuoteStatus;
 import com.mogo.project.modules.quote.domain.process.service.IQuoteLogService;
 import com.mogo.project.modules.quote.domain.order.service.IQuoteManageService;
+import com.mogo.project.modules.quote.domain.order.service.component.QuoteBusinessPriceCalculator;
 import com.mogo.project.modules.quote.domain.process.service.IQuoteProcessService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +25,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -44,6 +44,7 @@ public class QuoteProcessServiceImpl implements IQuoteProcessService {
     private final QuoteBusinessItemMapper quoteBusinessMapper;
 
     private final IQuoteManageService quoteManageService;
+    private final QuoteBusinessPriceCalculator quoteBusinessPriceCalculator;
     private final IQuoteLogService quoteLogService;
 
     private final ApplicationEventPublisher eventPublisher;
@@ -115,18 +116,9 @@ public class QuoteProcessServiceImpl implements IQuoteProcessService {
                 .eq(QuoteDetail::getDetailVersion, quoteVer));
 
         // 2. 初始化业务调整明细 (v1)
-        List<QuoteBusinessItem> businessItems = quoteDetails.stream().map(qd -> {
-            QuoteBusinessItem item = new QuoteBusinessItem();
-            item.setQuoteId(quoteId);
-            item.setDetailId(qd.getId());
-            item.setBusinessVersion(1); // 业务初始版本 v1
-            item.setOriginalTotal(qd.getFactoryTotal()); // 抄录
-            item.setDiscountRate(new BigDecimal("100")); // 默认100%
-            item.setDiscountTotal(qd.getFactoryTotal());
-            item.setFinalTotal(qd.getFactoryTotal());
-            item.setLockStatus(false);
-            return item;
-        }).collect(Collectors.toList());
+        List<QuoteBusinessItem> businessItems = quoteDetails.stream()
+                .map(qd -> quoteBusinessPriceCalculator.initFromDetail(quoteId, 1, qd))
+                .collect(Collectors.toList());
 
         businessItems.forEach(quoteBusinessMapper::insert);
 
