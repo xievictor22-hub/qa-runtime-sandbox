@@ -112,9 +112,9 @@ const hasPerm = (code: string) => {
 }
 
 // 状态UI
-const statusMap: any = { '0': '草稿', '1': '审核中', '2': '业务调整', '3': '已完成', '4': '已驳回', '5': '重调中' }
+const statusMap: {[key: string]: string} = { '0': '报价中', '1': '审核中', '2': '业务调整', '3': '已完成', '4': '重新报价中', '5': '业务重调中', '6': '重新报价中'}
 const statusText = computed(() => statusMap[props.info.status] || props.info.status)
-const statusType = computed(() => ['3'].includes(props.info.status) ? 'success' : ['4'].includes(props.info.status) ? 'danger' : 'warning')
+const statusType = computed(() => ['3'].includes(props.info.status) ? 'success' : ['4','6'].includes(props.info.status) ? 'danger' : 'warning')
 
 // 弹窗控制
 const dialogType = ref('') // submit, pass, reject, finish
@@ -123,7 +123,7 @@ const dialogVisible = computed({
   set: (val) => { if(!val) dialogType.value = '' }
 })
 const dialogTitle = computed(() => {
-  const map: any = { submit: '提交审核', pass: '审核通过', reject: '审核驳回', finish: '业务确认完成' }
+  const map: {[key: string]: string} = { submit: '提交审核', pass: '审核通过', reject: '审核驳回', finish: '业务确认完成' }
   return map[dialogType.value]
 })
 

@@ -25,6 +25,7 @@ export interface QuoteUpdateMessage {
 export function useWebSocket() {
   const client = ref<Client | null>(null)
   const isConnected = ref(false)
+  const hasShownNetworkError = ref(false)
   const userStore = useUserStore()
 
   /**
@@ -81,6 +82,18 @@ export function useWebSocket() {
     // 连接成功回调
     client.value.onConnect = (frame) => {
       isConnected.value = true
+      hasShownNetworkError.value = false
+      // ✅ 接收服务端系统消息（踢下线）
+      // 服务端会在用户登录后，将该用户之前的连接踢下线
+      // 你需要在前端监听这个消息，收到后提示用户重新登录
+      // 你项目里如果有 element-plus message，就弹一下
+      // ElMessage.warning('该账号已在其他设备登录，你已被下线')
+      // router.push('/login')
+      // 服务端会在用户登录后，将该用户之前的连接踢下线
+      // 你需要在前端监听这个消息，收到后提示用户重新登录
+      // 你项目里如果有 element-plus message，就弹一下
+      // ElMessage.warning('该账号已在其他设备登录，你已被下线')
+      // router.push('/login')
       // ✅ 接收服务端系统消息（踢下线）
   client.value?.subscribe('/user/queue/system', (msg) => {
     try {
@@ -125,7 +138,11 @@ export function useWebSocket() {
     // 连接失败处理
     client.value.onWebSocketError = (error) => {
       console.error('WebSocket 连接失败:', error)
-      ElMessage.error('WebSocket 连接失败，请检查网络')
+      // 避免重复提示
+      if (!hasShownNetworkError.value) {
+        ElMessage.error('WebSocket 连接失败，请检查网络')
+        hasShownNetworkError.value = true
+      }
       onError?.(error)
     }
 

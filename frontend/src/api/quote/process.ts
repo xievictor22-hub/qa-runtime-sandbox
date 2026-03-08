@@ -11,6 +11,14 @@ export interface ProcessUser {
   roleNames: string
   username: string
 }
+// 生成幂等键
+function createIdempotencyKey(action: string, quoteId: string) {
+  const random = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`
+  return `${action}:${quoteId}:${random}`
+}
+
 
 
 /** 提交审核 */
@@ -18,7 +26,10 @@ export function submitAudit(data: ProcessDto) {
   return request({
     url: '/quote/process/submit',
     method: 'post',
-    data
+    data,
+    headers: {
+      'Idempotency-Key': createIdempotencyKey('submitAudit', data.id)
+    }
   })
 }
 
@@ -27,7 +38,10 @@ export function auditPass(data: ProcessDto) {
   return request({
     url: '/quote/process/audit-pass',
     method: 'post',
-    data
+    data,
+    headers: {
+      'Idempotency-Key': createIdempotencyKey('auditPass', data.id)
+    }
   })
 }
 
@@ -36,7 +50,10 @@ export function auditReject(data: ProcessDto) {
   return request({
     url: '/quote/process/audit-reject',
     method: 'post',
-    data
+    data,
+    headers: {
+      'Idempotency-Key': createIdempotencyKey('auditReject', data.id)
+    }
   })
 }
 
@@ -44,7 +61,10 @@ export function auditReject(data: ProcessDto) {
 export function createNewVersion(quoteId: string) {
   return request({
     url: `/quote/process/${quoteId}/new-version`,
-    method: 'post'
+    method: 'post',
+    headers: {
+      'Idempotency-Key': createIdempotencyKey('createNewVersion', quoteId)
+    }
   })
 }
 

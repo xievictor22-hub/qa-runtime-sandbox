@@ -9,14 +9,41 @@
         <result column="quote_id" property="quoteId" />
         <result column="detail_id" property="detailId" />
         <result column="business_version" property="businessVersion" />
-        <result column="original_total" property="originalTotal" />
-        <result column="discount_rate" property="discountRate" />
-        <result column="discount_total" property="discountTotal" />
-        <result column="final_total" property="finalTotal" />
         <result column="lock_status" property="lockStatus" />
         <result column="remark" property="remark" />
         <result column="create_time" property="createTime" />
         <result column="update_time" property="updateTime" />
+        <result column="factory_sales_adjust_amount" property="factorySalesAdjustAmount" />
+        <result column="customer_factory_total" property="customerFactoryTotal" />
+        <result column="adjusted_factory_profit_amount" property="adjustedFactoryProfitAmount" />
+        <result column="adjusted_factory_profit_rate" property="adjustedFactoryProfitRate" />
+        <result column="install_sales_adjust_amount" property="installSalesAdjustAmount" />
+        <result column="customer_install_total" property="customerInstallTotal" />
+        <result column="adjusted_install_profit_amount" property="adjustedInstallProfitAmount" />
+        <result column="adjusted_install_profit_rate" property="adjustedInstallProfitRate" />
+        <result column="sales_unit_price" property="salesUnitPrice" />
+        <result column="sales_point" property="salesPoint" />
+        <result column="sales_discount" property="salesDiscount" />
+        <result column="sales_discounted_unit_price" property="salesDiscountedUnitPrice" />
+        <result column="sales_total" property="salesTotal" />
+        <result column="sales_profit" property="salesProfit" />
+        <result column="customer_unit_price" property="customerUnitPrice" />
+        <result column="sales_unit_adjust_amount" property="salesUnitAdjustAmount" />
+        <result column="customer_total_price" property="customerTotalPrice" />
+
+        <result column="factory_cost_unit_price" property="factoryCostUnitPrice" />
+        <result column="factory_discounts" property="factoryDiscounts" />
+        <result column="factory_unit_price" property="factoryUnitPrice" />
+        <result column="factory_total" property="factoryTotal" />
+        <result column="factory_profit" property="factoryProfit" />
+        <result column="factory_profit_rate" property="factoryProfitRate" />
+
+        <result column="install_cost_unit_price" property="installCostUnitPrice" />
+        <result column="install_discounts" property="installDiscounts" />
+        <result column="install_unit_price" property="installUnitPrice" />
+        <result column="install_total" property="installTotal" />
+        <result column="install_profit" property="installProfit" />
+        <result column="install_profit_rate" property="installProfitRate" />
 
         <result column="product_name" property="productName" />
         <result column="spec" property="spec" />

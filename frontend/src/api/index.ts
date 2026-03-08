@@ -50,6 +50,10 @@ service.interceptors.response.use(
     if (code === 200) {
       return data // 剥离外层，只返回 data
     } 
+    // 兼容后端业务层返回 200 + code=401 的情况，统一走 refresh 逻辑
+    if (code === 401) {
+      return authManager.handle401(response.config, service)
+    }
 
     if (code === 40001) {
       ElMessageBox.confirm('数据校验不通过，请下载错误报告修改', '导入失败', {
@@ -75,12 +79,15 @@ service.interceptors.response.use(
     if (error.response){
       switch (error.response.status) {
         case 401:
-          return authManager.handle401(error, service)
+          return authManager.handle401(error.config, service)
         case 403:
           msg = '没有权限访问该资源'
           break
         case 404:
           msg = '请求资源不存在'
+          break
+        case 409:
+          msg = '数据已被其他用户修改，请刷新页面后重试'
           break
         case 500:
           msg = '服务器内部错误'

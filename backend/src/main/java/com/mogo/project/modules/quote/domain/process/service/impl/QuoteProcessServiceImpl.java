@@ -61,8 +61,10 @@ public class QuoteProcessServiceImpl implements IQuoteProcessService {
         QuoteOrder order = quoteManageService.getByIdSafe(quoteId);
         checkPermission(order);
 
-        // 1. 校验前置状态 (只能是 待报价0 或 待重新报价4)
-        if (!QuoteStatus.DRAFT.equals(order.getStatus()) && !QuoteStatus.REJECT_TO_QUOTER.equals(order.getStatus())) {
+        // 1. 校验前置状态 (只能是 待报价0 或 待重新报价4/6)
+        if (!QuoteStatus.DRAFT.equals(order.getStatus())
+                && !QuoteStatus.REJECT_TO_QUOTER.equals(order.getStatus())
+                && !QuoteStatus.REQUOTE_FROM_COMPLETED.equals(order.getStatus())) {
             throw new ServiceException("当前状态不可提交审核");
         }
 
@@ -120,10 +122,6 @@ public class QuoteProcessServiceImpl implements IQuoteProcessService {
             item.setQuoteId(quoteId);
             item.setDetailId(qd.getId());
             item.setBusinessVersion(1); // 业务初始版本 v1
-            item.setOriginalTotal(qd.getFactoryTotal()); // 抄录
-            item.setDiscountRate(new BigDecimal("100")); // 默认100%
-            item.setDiscountTotal(qd.getFactoryTotal());
-            item.setFinalTotal(qd.getFactoryTotal());
             item.setLockStatus(false);
             return item;
         }).collect(Collectors.toList());
@@ -208,7 +206,7 @@ public class QuoteProcessServiceImpl implements IQuoteProcessService {
         QuoteOrder order = quoteManageService.getByIdSafe(quoteId);
         checkPermission(order);
 
-        if (!QuoteStatus.REJECT_TO_QUOTER.equals(order.getStatus())) {
+        if (!QuoteStatus.REJECT_TO_QUOTER.equals(order.getStatus())&&!QuoteStatus.REQUOTE_FROM_COMPLETED.equals(order.getStatus())) {
             throw new ServiceException("只有[待重新报价]状态才能创建新版本");
         }
 
@@ -240,7 +238,7 @@ public class QuoteProcessServiceImpl implements IQuoteProcessService {
         LambdaUpdateWrapper<QuoteOrder> updateWrapper = new LambdaUpdateWrapper<>();
         updateWrapper.set(QuoteOrder::getCurrentQuoteVersion, newVer)
                 .eq(QuoteOrder::getId, quoteId)
-                .eq(QuoteOrder::getStatus, QuoteStatus.REJECT_TO_QUOTER)
+                .eq(QuoteOrder::getStatus, order.getStatus())
                 .eq(QuoteOrder::getCurrentHandlerId, SecurityUtils.getUserId());
 
         int rows = quoteOrderMapper.update(null, updateWrapper);

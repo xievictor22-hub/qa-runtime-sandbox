@@ -4,6 +4,7 @@ import com.mogo.project.common.annotation.Anonymous;
 import com.mogo.project.common.annotation.RateLimit;
 import com.mogo.project.common.exception.ServiceException;
 import com.mogo.project.common.response.ApiResponse;
+import com.mogo.project.common.util.SecurityUtils;
 import com.mogo.project.modules.auth.dto.LoginDto;
 import com.mogo.project.modules.auth.dto.RefreshRequest;
 import com.mogo.project.modules.auth.dto.TokenResponse;
@@ -121,8 +122,9 @@ public class AuthController {
         TokenResponse tokenResponse = new TokenResponse();
         tokenResponse.setRefreshToken(newRefresh);
         tokenResponse.setAccessToken(newAccess);
-        LoginUser principal = (LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        tokenService.refreshToken(principal);
+        // /auth/refresh 允许匿名访问，SecurityContext 中 principal 可能是 "anonymousUser"（String）
+        // 这里应使用已通过 refreshToken + Redis 校验过的 loginUser 续期
+        tokenService.refreshToken(loginUser);
         return ApiResponse.success(tokenResponse);
     }
 }

@@ -45,7 +45,6 @@ public class QuoteDetail extends BaseEntity {
     private String regionAscription;     // 区域归属
     private String projectArea;          // 项目区域
     private String position;             // 位置
-
     private String productName;          // 产品名称
     private String spec;                 // 规格
     private String model;                // 型号
@@ -95,23 +94,22 @@ public class QuoteDetail extends BaseEntity {
     private BigDecimal colorPrice;       // 颜色价
 
     // --- 汇总价格 ---
-    private BigDecimal distPrice;        // 分销价
-    private BigDecimal summaryPrice;     // 汇总价
+    private BigDecimal distPrice;        // 出厂单价
+    private BigDecimal summaryPrice;     // 出厂总价
 
-    private BigDecimal factoryTotal;     // 出厂总价
-    private BigDecimal factoryProfit;    // 出厂利润
+    private BigDecimal factoryCostUnitPrice;   //生产成本单价--
+    private BigDecimal factoryDiscounts;    //生产折扣--
+    private BigDecimal factoryUnitPrice;    //生产单价--
+    private BigDecimal factoryTotal;     // 生产总价
+    private BigDecimal factoryProfit;    // 生产利润
+    private BigDecimal factoryProfitRate; //生产打点-- 报价单全选
+
+    private BigDecimal installCostUnitPrice;   //安装成本单价--
+    private BigDecimal installDiscounts;    //安装折扣--
+    private BigDecimal installUnitPrice;    //安装单价--
     private BigDecimal installTotal;     // 安装总价
     private BigDecimal installProfit;    // 安装利润
-    private BigDecimal salesTotal;       // 销售总价
-    private BigDecimal taxAmount;        // 税金
-
-    // --- 客户价格 (0.00部分) ---
-    private BigDecimal custUnitPrice;  //客户单价
-    private BigDecimal custTotalPrice; //客户总价
-    private BigDecimal custFactoryUnit; //客户工厂单价
-    private BigDecimal custFactoryTotal; //客户工厂总价
-    private BigDecimal custInstallUnit; //客户安装单价
-    private BigDecimal custInstallTotal; //客户安装总价
+    private BigDecimal installProfitRate; //安装打点-- 报价单全选
 
     // --- 备注与杂项 ---
     private String deptOwner;            // 承担部门
@@ -119,12 +117,15 @@ public class QuoteDetail extends BaseEntity {
     private String changeDesc;           // 增减说明
     private String otherRemark;          // 其他备注
     private String remarkDesc;           // Note
+
+    private Integer updateVersion;   //数据版本号，更新数据时会更新  用来识别在新建业务时提示被修改
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime sourceAddTime; // AddTime
 
     // --- 关联数据 (不存本表) ---
     @TableField(exist = false)
     private List<QuoteDetailItem> items; // 制品的子件列表
+
 
 
     //后端ws推送前端对象，提示单据已更新

@@ -132,7 +132,7 @@
           >
             明细
           </el-button>
-          <el-button v-else link icon="View" @click="openItemDialog(row)">查看</el-button>
+          <el-button v-else link icon="View" :disabled="row.detailType === 0"  @click="openItemDialog(row)">查看</el-button>
           
           </template>
       </el-table-column>
@@ -143,7 +143,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { listQuoteDetails, importQuoteDetail,type QuoteDetailVO } from '@/api/quote/detail'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -153,6 +153,7 @@ const emit = defineEmits(['refresh-head'])
 
 const tableData = ref<QuoteDetailVO[]>([])
 const router = useRouter()
+
 
 const canEdit = computed(() => props.permissions?.includes('cost-edit'))
 

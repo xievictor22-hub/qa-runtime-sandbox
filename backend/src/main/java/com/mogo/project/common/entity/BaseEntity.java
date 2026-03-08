@@ -37,6 +37,13 @@ public class BaseEntity implements Serializable {
     private Integer deleteFlag;
 //    private Integer isDeleted;
 
+    /**
+     * 乐观锁版本号
+     */
+    @Version
+    @TableField("lock_version")
+    private Integer lockVersion;
+
     private String remark;
 
     /** 请求参数 (用于数据权限传参) */

@@ -22,21 +22,34 @@ public class QuoteOrder extends BaseEntity {
     private Long deptId;
 
     /**
-     * 状态: 0=草稿, 1=审核中, 2=业务调整, 3=已完成, 4=已驳回, 5=重新调整
+     * 状态: 0=草稿, 1=审核中, 2=业务调整, 3=已完成, 4=待重新报价(审核退回), 5=重新调整, 6=待重新报价(完结回退)
      * @see QuoteStatus
      */
 
     private String status;
 
+
+
     /** 当前处理人ID */
     private Long currentHandlerId;
 
-
+    /**
+     * 税率
+     */
     private BigDecimal taxRate;
+    /**
+     * 客户姓名
+     */
     private String customerName;
 
     // 费用
+    /**
+     * 生产费用
+     */
     private BigDecimal totalMaterialPrice;
+    /**
+     * 安装费
+     */
     private BigDecimal totalInstallPrice;
     private BigDecimal finalTotalPrice;
     // JSON 字段建议用 String 接收，或者配合 Jackson TypeHandler

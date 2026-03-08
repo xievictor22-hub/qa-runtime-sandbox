@@ -122,13 +122,22 @@ public class QuoteCalculationService {
         }
         //激光价格todo 暂时不算
         entity.setLaserMPrice(BigDecimal.ZERO);
-        //计算单价
-        BigDecimal distPrice = entity.getMaterialPrice().add(entity.getFoldingPrice()).add(entity.getSlottingPrice())
-                .add(entity.getInstallPrice()).add(entity.getNoFingerprintPrice()).add(entity.getColorPrice())
+
+
+        //计算生产成本单价
+        BigDecimal factoryCostUnitPrice = entity.getMaterialPrice().add(entity.getFoldingPrice()).add(entity.getSlottingPrice())
+                .add(entity.getNoFingerprintPrice()).add(entity.getColorPrice())
                 .add(entity.getTexturePrice()).add(entity.getLaserMPrice()).setScale(2, RoundingMode.HALF_UP);
+        //安装成本单价
+        //出厂单价  生产成本单价+安装成本单价
+        BigDecimal distPrice = factoryCostUnitPrice.add(installPrice).setScale(2, RoundingMode.HALF_UP);
+        //只给成本单价
         entity.setDistPrice(distPrice);
-        //总价
-        entity.setSummaryPrice(distPrice.multiply(quantity).setScale(2, RoundingMode.HALF_UP));
+        entity.setFactoryCostUnitPrice(factoryCostUnitPrice);
+        entity.setInstallCostUnitPrice(installPrice);
+        //出厂总价
+        BigDecimal setSummaryPrice = distPrice.multiply(quantity).setScale(2, RoundingMode.HALF_UP);
+        entity.setSummaryPrice(setSummaryPrice);
         return entity;
     }
 

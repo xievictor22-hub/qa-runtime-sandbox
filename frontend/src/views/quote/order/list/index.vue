@@ -20,7 +20,9 @@
             <el-option label="审核中" value="1" />
             <el-option label="业务调整" value="2" />
             <el-option label="已完成" value="3" />
-            <el-option label="已驳回" value="4" />
+            <el-option label="待重新报价" value="4" />
+            <el-option label="业务重新调整中" value="5" />
+            <el-option label="待重新报价(完结回退)" value="6" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -151,9 +153,9 @@ const { connect, subscribe, disconnect, isConnected } = useWebSocket()
 const wsSubscription = ref<any>(null)
 
 // 状态字典
-const statusMap: any = { '0': '草稿', '1': '审核中', '2': '业务调整', '3': '已完成', '4': '已驳回', '5': '重调中' }
+const statusMap: {[key: string]: string} = { '0': '草稿', '1': '审核中', '2': '业务调整', '3': '已完成', '4': '待重新报价', '5': '重调中', '6': '待重新报价' }
 const statusText = (s: string) => statusMap[s] || s
-const statusType = (s: string) => ['3'].includes(s) ? 'success' : ['1','2'].includes(s) ? 'warning' : ['4'].includes(s) ? 'danger' : 'info'
+const statusType = (s: string) => ['3'].includes(s) ? 'success' : ['1','2','5'].includes(s) ? 'warning' : ['4','6'].includes(s) ? 'danger' : 'info'
 const wsStatusText = computed(() => isConnected.value ? '服务已连接' : '服务断开')
 const wsStatusType = computed(() => isConnected.value ? 'success' : 'info')
 

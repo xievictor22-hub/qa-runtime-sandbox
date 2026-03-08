@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.mogo.project.common.exception.ServiceException;
+import com.mogo.project.modules.quote.domain.order.constant.QuoteMatchConstant;
 import com.mogo.project.modules.quote.domain.order.convert.QuoteDetailItemConvert;
 import com.mogo.project.modules.quote.domain.order.mapper.QuoteDetailItemMapper;
 import com.mogo.project.modules.quote.domain.order.mapper.QuoteDetailMapper;
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -56,6 +58,8 @@ public class QuoteDetailItemServiceImpl extends ServiceImpl<QuoteDetailItemMappe
         quoteDetailItem.setUnitPriceSnapshot(distPrice);
         quoteDetailItem.setQuoteId(parent.getQuoteId()); // 冗余存储 quoteId 方便查询
         this.save(quoteDetailItem);
+        //如果是安装单价，那么安装总价结果除与父级的数量，得到父级的安装成本单价
+        //除去安装部分，其他都是生产成本单价
         // 核心：反算父级价格
         updateParentPrice(quoteDetailItem.getDetailId());
     }
@@ -123,27 +127,40 @@ public class QuoteDetailItemServiceImpl extends ServiceImpl<QuoteDetailItemMappe
                 .eq(QuoteDetailItem::getDetailId, detailId)
                 .orderByAsc(QuoteDetailItem::getId));
 
-        // 2. 累加所有子件的总价
-        BigDecimal totalCost = items.stream()
+        // 2. 累加所有子件的总价  安装成本总价
+        BigDecimal installTotalCost = items.stream()
+                .filter( quoteDetailItem -> QuoteMatchConstant.PROCESS_INSTALL.equals(quoteDetailItem.getProcess1()))
                 .map(QuoteDetailItem::getTotalPrice)
                 .filter(java.util.Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-
+        //累加所有子件的总价  生产成本总价
+        BigDecimal factoryTotalCost = items.stream()
+                .filter( quoteDetailItem -> !QuoteMatchConstant.PROCESS_INSTALL.equals(quoteDetailItem.getProcess1()))
+                .map(QuoteDetailItem::getTotalPrice)
+                .filter(java.util.Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalCost = installTotalCost.add(factoryTotalCost);
         // 3. 更新父对象
         QuoteDetail parent = quoteDetailMapper.selectById(detailId);
         if (parent != null) {
-            parent.setSummaryPrice(totalCost); // 子件的总价就是明细的总价
+            parent.setSummaryPrice(totalCost); // 子件的总价就是明细的成本总价
+            BigDecimal quantity = parent.getQuantity(); //父级数量
             // 反算单价：如果父件数量为0，避免除以零异常
-            if (parent.getQuantity() != null && parent.getQuantity().compareTo(BigDecimal.ZERO)  > 0) {
+            if (quantity != null && quantity.compareTo(BigDecimal.ZERO)  > 0) {
                 // 单价 = 总价 / 数量 (保留2位小数，四舍五入)
                 BigDecimal unitPrice = totalCost.divide(
-                        parent.getQuantity(),
+                        quantity,
                         2,
                         RoundingMode.HALF_UP
                 );
+                //安装成本单价，
                 parent.setDistPrice(unitPrice);
+                parent.setInstallCostUnitPrice(installTotalCost.divide(quantity, 2, RoundingMode.HALF_UP));
+                parent.setFactoryCostUnitPrice(factoryTotalCost.divide(quantity, 2, RoundingMode.HALF_UP));
             } else {
                 parent.setDistPrice(BigDecimal.ZERO);
+                parent.setInstallCostUnitPrice(BigDecimal.ZERO);
+                parent.setFactoryCostUnitPrice(BigDecimal.ZERO);
             }
             quoteDetailMapper.updateById(parent);
         }

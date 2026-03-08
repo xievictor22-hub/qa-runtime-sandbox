@@ -78,15 +78,15 @@ public class QuoteBusinessServiceImpl extends ServiceImpl<QuoteBusinessItemMappe
             item.setDetailId(detail.getId()); // 关联原始明细ID
             item.setBusinessVersion(version);         // 设置业务版本 (例如 1)
 
-            // --- 价格初始化逻辑 ---
-            // 初始时：原价 = 出厂总价
-            item.setOriginalTotal(detail.getFactoryTotal());
-            // 初始时：折扣率 = 100% (不打折)
-            item.setDiscountRate(new BigDecimal("100"));
-            // 初始时：折扣后价格 = 原价
-            item.setDiscountTotal(detail.getFactoryTotal());
-            // 初始时：最终成交价 = 原价
-            item.setFinalTotal(detail.getFactoryTotal());
+//            // --- 价格初始化逻辑 ---
+//            // 初始时：原价 = 出厂总价
+//            item.setOriginalTotal(detail.getFactoryTotal());
+//            // 初始时：折扣率 = 100% (不打折)
+//            item.setDiscountRate(new BigDecimal("100"));
+//            // 初始时：折扣后价格 = 原价
+//            item.setDiscountTotal(detail.getFactoryTotal());
+//            // 初始时：最终成交价 = 原价
+//            item.setFinalTotal(detail.getFactoryTotal());
 
             item.setLockStatus(false); // 初始未锁，允许业务员编辑
             return item;

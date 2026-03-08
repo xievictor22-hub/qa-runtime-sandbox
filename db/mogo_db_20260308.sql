@@ -11,7 +11,7 @@
  Target Server Version : 80037
  File Encoding         : 65001
 
- Date: 03/03/2026 11:28:45
+ Date: 08/03/2026 16:36:38
 */
 
 SET NAMES utf8mb4;
@@ -26,10 +26,35 @@ CREATE TABLE `quote_business_item`  (
   `quote_id` bigint NOT NULL COMMENT '报价单ID',
   `detail_id` bigint NOT NULL COMMENT '关联的报价员明细ID',
   `business_version` int NOT NULL DEFAULT 1 COMMENT '业务调整版本号',
-  `original_total` decimal(15, 2) NULL DEFAULT NULL COMMENT '原总价(冗余字段，方便快照)',
-  `discount_rate` decimal(10, 2) NULL DEFAULT 100.00 COMMENT '折扣率(%)',
-  `discount_total` decimal(15, 2) NULL DEFAULT NULL COMMENT '折扣后总价',
-  `final_total` decimal(15, 2) NULL DEFAULT NULL COMMENT '最终调整总价(人工一口价)',
+  `factory_sales_adjust_amount` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '生产销售调整金额',
+  `factory_cost_unit_price` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '生产成本单价',
+  `factory_discounts` decimal(10, 4) NULL DEFAULT 1.0000 COMMENT '生产折扣',
+  `factory_unit_price` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '生产单价',
+  `factory_total` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '生产总价',
+  `factory_profit` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '生产利润',
+  `factory_profit_rate` decimal(10, 4) NULL DEFAULT 0.0000 COMMENT '生产打点--报价单全选',
+  `customer_factory_total` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '客户生产总价',
+  `adjusted_factory_profit_amount` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '调整生产后利润金额',
+  `adjusted_factory_profit_rate` decimal(10, 4) NULL DEFAULT 0.0000 COMMENT '调整后生产利润率',
+  `install_sales_adjust_amount` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '安装销售调整金额',
+  `install_cost_unit_price` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '安装成本单价',
+  `install_discounts` decimal(10, 4) NULL DEFAULT 1.0000 COMMENT '安装折扣',
+  `install_unit_price` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '安装单价',
+  `install_total` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '安装总价',
+  `install_profit` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '安装利润',
+  `install_profit_rate` decimal(10, 4) NULL DEFAULT 0.0000 COMMENT '安装打点--报价单全选',
+  `customer_install_total` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '客户安装总价',
+  `adjusted_install_profit_amount` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '调整安装后利润金额',
+  `adjusted_install_profit_rate` decimal(10, 4) NULL DEFAULT 0.0000 COMMENT '调整后安装利润率',
+  `sales_unit_price` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '销售单价(来自QuoteDetail.dist_price)',
+  `sales_point` decimal(10, 4) NULL DEFAULT 0.0000 COMMENT '销售打点',
+  `sales_discount` decimal(10, 4) NULL DEFAULT 1.0000 COMMENT '销售折扣',
+  `sales_discounted_unit_price` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '折后销售单价',
+  `sales_total` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '销售总价',
+  `sales_profit` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '销售利润',
+  `customer_unit_price` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '对客户单价',
+  `sales_unit_adjust_amount` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '销售单价调整',
+  `customer_total_price` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '对客户总价',
   `lock_status` tinyint(1) NULL DEFAULT 0 COMMENT '锁定状态(0:未锁, 1:已锁)',
   `remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
   `create_time` datetime NULL DEFAULT NULL,
@@ -37,10 +62,11 @@ CREATE TABLE `quote_business_item`  (
   `create_by` bigint NULL DEFAULT NULL,
   `update_by` bigint NULL DEFAULT NULL,
   `delete_flag` tinyint(1) NULL DEFAULT 0,
+  `lock_version` int NOT NULL DEFAULT 0 COMMENT '乐观锁版本号',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_quote_ver`(`quote_id` ASC, `business_version` ASC) USING BTREE,
   INDEX `idx_detail`(`detail_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '报价业务调整明细表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 280 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '报价业务调整明细表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for quote_detail
@@ -102,16 +128,16 @@ CREATE TABLE `quote_detail`  (
   `summary_price` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '汇总价',
   `factory_total` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '出厂总价(核心)',
   `factory_profit` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '出厂利润',
+  `factory_cost_unit_price` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '生产成本单价',
+  `factory_discounts` decimal(10, 4) NULL DEFAULT 1.0000 COMMENT '生产折扣',
+  `factory_unit_price` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '生产单价',
+  `factory_profit_rate` decimal(10, 4) NULL DEFAULT 0.0000 COMMENT '生产打点(报价单全选)',
   `install_total` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '安装总价(核心)',
   `install_profit` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '安装利润',
-  `sales_total` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '销售总价',
-  `tax_amount` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '税金',
-  `cust_unit_price` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '客户单价',
-  `cust_total_price` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '客户总价',
-  `cust_factory_unit` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '客户出厂单价',
-  `cust_factory_total` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '客户出厂总价',
-  `cust_install_unit` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '客户安装单价',
-  `cust_install_total` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '客户安装总价',
+  `install_cost_unit_price` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '安装成本单价',
+  `install_discounts` decimal(10, 4) NULL DEFAULT 1.0000 COMMENT '安装折扣',
+  `install_unit_price` decimal(15, 2) NULL DEFAULT 0.00 COMMENT '安装单价',
+  `install_profit_rate` decimal(10, 4) NULL DEFAULT 0.0000 COMMENT '安装打点(报价单全选)',
   `dept_owner` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '承担部门',
   `change_category` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '增减类别',
   `change_desc` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '增减说明',
@@ -127,9 +153,10 @@ CREATE TABLE `quote_detail`  (
   `surface_process` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '表面处理',
   `detail_type` tinyint(1) NULL DEFAULT NULL COMMENT '折件0/制品1',
   `project_type` tinyint(1) NULL DEFAULT NULL COMMENT '0家装1工装',
+  `lock_version` int NOT NULL DEFAULT 0 COMMENT '乐观锁版本号',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_quote_ver`(`quote_id` ASC, `detail_version` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1390 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '报价明细主表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1483 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '报价明细主表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for quote_detail_item
@@ -159,9 +186,10 @@ CREATE TABLE `quote_detail_item`  (
   `update_time` datetime NULL DEFAULT NULL,
   `delete_flag` tinyint NULL DEFAULT 0,
   `remark_desc` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '内部技术备注',
+  `lock_version` int NOT NULL DEFAULT 0 COMMENT '乐观锁版本号',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_quote`(`quote_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1010 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '报价单明细子项表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1011 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '报价单明细子项表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for quote_folding_rule
@@ -196,6 +224,7 @@ CREATE TABLE `quote_folding_rule`  (
   `update_time` datetime NULL DEFAULT NULL,
   `delete_flag` tinyint NULL DEFAULT 0,
   `remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `lock_version` int NOT NULL DEFAULT 0 COMMENT '乐观锁版本号',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 2021116796282605676 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '折件底价规则表' ROW_FORMAT = Dynamic;
 
@@ -228,6 +257,7 @@ CREATE TABLE `quote_import_source`  (
   `remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `sort` int NULL DEFAULT NULL COMMENT '导入表行号',
   `remark_message` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '备注',
+  `lock_version` int NOT NULL DEFAULT 0 COMMENT '乐观锁版本号',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 2021116794835570785 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '报价原始导入表' ROW_FORMAT = Dynamic;
 
@@ -246,7 +276,7 @@ CREATE TABLE `quote_log`  (
   `comment` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
   `create_time` datetime NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 47 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '报价履历表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 49 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '报价履历表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for quote_order
@@ -274,8 +304,9 @@ CREATE TABLE `quote_order`  (
   `remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '备注',
   `current_quote_version` int NULL DEFAULT 1 COMMENT '当前报价员版本(1,2...)',
   `current_business_version` int NULL DEFAULT 0 COMMENT '当前业务员版本(0表示未进入业务环节)',
+  `lock_version` int NOT NULL DEFAULT 0 COMMENT '乐观锁版本号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 21 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '报价单主表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 22 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '报价单主表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for quote_product_library
@@ -303,6 +334,7 @@ CREATE TABLE `quote_product_library`  (
   `update_time` datetime NULL DEFAULT NULL,
   `delete_flag` tinyint NULL DEFAULT 0,
   `remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `lock_version` int NOT NULL DEFAULT 0 COMMENT '乐观锁版本号',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_ver_del`(`version` ASC, `delete_flag` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 2021116794835570785 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '制品通用底价库' ROW_FORMAT = Dynamic;
@@ -326,9 +358,41 @@ CREATE TABLE `quote_version_log`  (
   `delete_flag` tinyint NULL DEFAULT 0,
   `remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `is_latest` tinyint(1) NULL DEFAULT NULL COMMENT '是否是最新版本',
+  `lock_version` int NOT NULL DEFAULT 0 COMMENT '乐观锁版本号',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_version`(`version` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 16 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '报价版本日志表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for sys_client_error_log
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_client_error_log`;
+CREATE TABLE `sys_client_error_log`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '前端错误日志收集',
+  `app_name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '前端应用名',
+  `env` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '环境: dev/test/prod',
+  `level` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '等级: info/warn/error/fatal',
+  `error_type` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '类型: js/vue/promise/resource/http',
+  `message` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `stack` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `page_url` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `route_path` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `user_id` bigint NULL DEFAULT NULL,
+  `username` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `ip` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `user_agent` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `device_id` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `trace_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `extra_json` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '附加上下文',
+  `occur_time` datetime NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_occur_time`(`occur_time` ASC) USING BTREE,
+  INDEX `idx_error_type`(`error_type` ASC) USING BTREE,
+  INDEX `idx_level`(`level` ASC) USING BTREE,
+  INDEX `idx_user`(`user_id` ASC) USING BTREE,
+  INDEX `idx_trace_id`(`trace_id` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for sys_config
@@ -364,6 +428,7 @@ CREATE TABLE `sys_dept`  (
   `update_by` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
   `leader_id` bigint NULL DEFAULT NULL COMMENT '负责人ID',
   `remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
+  `lock_version` int NOT NULL DEFAULT 0 COMMENT '乐观锁版本号',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_dept_leader`(`leader_id` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 159 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '部门表' ROW_FORMAT = Dynamic;
@@ -420,7 +485,7 @@ CREATE TABLE `sys_logininfor`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_sys_logininfor_s`(`status` ASC) USING BTREE,
   INDEX `idx_sys_logininfor_lt`(`access_time` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2028389742973923331 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '系统访问记录' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2029831318002470914 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '系统访问记录' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for sys_menu
@@ -444,6 +509,7 @@ CREATE TABLE `sys_menu`  (
   `create_by` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `update_by` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `lock_version` int NOT NULL DEFAULT 0 COMMENT '乐观锁版本号',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 2150 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '菜单权限表' ROW_FORMAT = Dynamic;
 
@@ -472,7 +538,7 @@ CREATE TABLE `sys_oper_log`  (
   INDEX `idx_sys_oper_log_bt`(`business_type` ASC) USING BTREE,
   INDEX `idx_sys_oper_log_s`(`status` ASC) USING BTREE,
   INDEX `idx_sys_oper_log_ot`(`oper_time` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2026923936268210178 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '操作日志记录' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2029831822422052866 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '操作日志记录' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for sys_role
@@ -491,6 +557,7 @@ CREATE TABLE `sys_role`  (
   `status` tinyint(1) NULL DEFAULT NULL,
   `create_by` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `update_by` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `lock_version` int NOT NULL DEFAULT 0 COMMENT '乐观锁版本号',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_role_code`(`role_key` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '角色表' ROW_FORMAT = Dynamic;
@@ -517,7 +584,7 @@ CREATE TABLE `sys_role_menu`  (
   `menu_id` bigint NOT NULL COMMENT '菜单ID',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_role_menu`(`role_id` ASC, `menu_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 532 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '角色菜单关联表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 548 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '角色菜单关联表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for sys_social
@@ -633,6 +700,7 @@ CREATE TABLE `sys_user`  (
   `delete_flag` tinyint(1) NULL DEFAULT 0 COMMENT '逻辑删除 0:未删 1:已删',
   `gender` tinyint(1) NULL DEFAULT NULL COMMENT '性别',
   `work_id` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '工号',
+  `lock_version` int NOT NULL DEFAULT 0 COMMENT '乐观锁版本号',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_phone_active`(`phone` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 703 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '系统用户表' ROW_FORMAT = Dynamic;

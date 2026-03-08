@@ -61,8 +61,8 @@ mybatis-plus:
 jwt:
   header: Authorization
   secret: abcdefghijklmnopqrstuvwxyz0123456789abcdef # ⚠️ 必须足够长(32+字符)用于 HS256 算法
-  access-token-expiration: 3000 #1800000 #3000 token30分钟
-  refresh-token-expiration: 2000000 #604800000 #20000 刷新token 7天
+  access-token-expiration:  1800000 #3000 token30分钟
+  refresh-token-expiration:  604800000 #20000 刷新token 7天
 knife4j:
   enable: true
   setting:

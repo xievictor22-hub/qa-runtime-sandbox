@@ -60,7 +60,7 @@ public class QuoteDetailImportManager {
             throw new ServiceException("无项目类型,无法匹配底价表！");
         }
         // 假设只允许草稿或待重新报价状态导入
-        if (!"0".equals(order.getStatus()) && !"4".equals(order.getStatus())) {
+        if (!"0".equals(order.getStatus()) && !"4".equals(order.getStatus())&&!"6".equals(order.getStatus())) {
             throw new ServiceException("当前状态不允许导入明细！");
         }
         // 2. 清理当前版本的旧数据 (覆盖模式)

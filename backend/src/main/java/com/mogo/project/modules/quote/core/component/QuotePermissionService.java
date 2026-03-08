@@ -47,12 +47,12 @@ public class QuotePermissionService {
 
         // 2. 状态机权限映射
         // --- 阶段1: 报价草稿/驳回 ---
-        if (QuoteStatus.DRAFT.equals(status) || QuoteStatus.REJECT_TO_QUOTER.equals(status)) {
+        if (QuoteStatus.DRAFT.equals(status) || QuoteStatus.REJECT_TO_QUOTER.equals(status)||QuoteStatus.REQUOTE_FROM_COMPLETED.equals(status)) {
             if (isHandler || isAdmin) {
                 perms.add("cost-edit");   // 允许编辑成本/导入
                 perms.add("submit");      // 允许提交
                 if (QuoteStatus.DRAFT.equals(status)) perms.add("delete");
-                if (QuoteStatus.REJECT_TO_QUOTER.equals(status)) perms.add("new-version");
+                if (QuoteStatus.REJECT_TO_QUOTER.equals(status)||QuoteStatus.REQUOTE_FROM_COMPLETED.equals(status)) perms.add("new-version");
             }
         }
 

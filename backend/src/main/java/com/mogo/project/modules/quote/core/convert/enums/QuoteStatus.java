@@ -10,4 +10,5 @@ public interface QuoteStatus {
     String COMPLETED = "3";         // 已完成
     String REJECT_TO_QUOTER = "4";  // 待重新报价 (审核退回)
     String RE_ADJUST_BUSINESS = "5";// 待业务重新调整 (已完成后重开)
+    String REQUOTE_FROM_COMPLETED = "6"; //从已完成状态重新转回报价
 }
