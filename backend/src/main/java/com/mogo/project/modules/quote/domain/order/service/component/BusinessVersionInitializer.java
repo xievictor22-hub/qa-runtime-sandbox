@@ -27,6 +27,7 @@ public class BusinessVersionInitializer {
 
     private final QuoteBusinessItemMapper quoteBusinessMapper;
     private final QuoteDetailMapper quoteDetailMapper;
+    private final QuoteBusinessPriceCalculator quoteBusinessPriceCalculator;
 
     /** 场景1：初次进入业务，全部按默认业务值初始化 */
     public List<QuoteBusinessItem> initFirstBusinessVersion(Long quoteId,
@@ -126,22 +127,16 @@ public class BusinessVersionInitializer {
     }
 
     private QuoteBusinessItem initBusinessItem(Long quoteId, Integer businessVersion, QuoteDetail quoteDetail, QuoteBusinessItem oldItem) {
+        if (oldItem == null) {
+            return quoteBusinessPriceCalculator.initFromDetail(quoteId, businessVersion, quoteDetail);
+        }
+
         QuoteBusinessItem item = new QuoteBusinessItem();
+        BeanUtils.copyProperties(oldItem, item, "id", "createTime", "updateTime", "createBy", "updateBy", "lockVersion");
         item.setQuoteId(quoteId);
         item.setDetailId(quoteDetail.getId());
         item.setBusinessVersion(businessVersion);
         item.setLockStatus(false);
-
-        if (oldItem == null) {
-            //先处理
-            item.set
-            item.setRemark(null);
-        } else {
-            item.setDiscountRate(oldItem.getDiscountRate());
-            item.setDiscountTotal(oldItem.getDiscountTotal());
-            item.setFinalTotal(oldItem.getFinalTotal());
-            item.setRemark(oldItem.getRemark());
-        }
         return item;
     }
 

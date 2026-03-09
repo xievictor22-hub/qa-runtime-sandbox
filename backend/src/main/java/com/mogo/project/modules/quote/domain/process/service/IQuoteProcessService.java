@@ -45,4 +45,11 @@ public interface IQuoteProcessService {
      * @param quoteId 报价单id
      */
     void reAdjustBusiness(Long quoteId);
+
+    /**
+     * 撤回到报价阶段
+     * @param quoteId 报价单id
+     */
+    void withdrawToQuote(Long quoteId);
+
 }

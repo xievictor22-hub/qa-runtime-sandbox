@@ -8,6 +8,8 @@ import com.mogo.project.modules.quote.core.enums.LogAction;
 import com.mogo.project.modules.quote.core.event.QuoteStateChangeEvent;
 import com.mogo.project.modules.quote.domain.order.mapper.QuoteBusinessItemMapper;
 import com.mogo.project.modules.quote.domain.order.mapper.QuoteDetailMapper;
+import com.mogo.project.modules.quote.domain.order.service.component.BusinessVersionInitializer;
+import com.mogo.project.modules.quote.domain.order.service.component.QuoteVersionInitializer;
 import com.mogo.project.modules.quote.domain.process.mapper.QuoteLogMapper;
 import com.mogo.project.modules.quote.domain.order.mapper.QuoteOrderMapper;
 import com.mogo.project.modules.quote.domain.order.entity.QuoteBusinessItem;
@@ -20,15 +22,12 @@ import com.mogo.project.modules.quote.domain.order.service.IQuoteManageService;
 import com.mogo.project.modules.quote.domain.process.service.IQuoteProcessService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * 报价单流程管理
@@ -45,6 +44,8 @@ public class QuoteProcessServiceImpl implements IQuoteProcessService {
 
     private final IQuoteManageService quoteManageService;
     private final IQuoteLogService quoteLogService;
+    private final BusinessVersionInitializer businessVersionInitializer;
+    private final QuoteVersionInitializer quoteVersionInitializer;
 
     private final ApplicationEventPublisher eventPublisher;
 
@@ -103,36 +104,31 @@ public class QuoteProcessServiceImpl implements IQuoteProcessService {
      */
     @Override
     public void auditPass(Long quoteId, Long nextHandlerId, String comment) {
-        QuoteOrder order =  quoteManageService.getByIdSafe(quoteId);
+        QuoteOrder order = quoteManageService.getByIdSafe(quoteId);
         checkPermission(order);
 
         if (!QuoteStatus.PENDING_AUDIT.equals(order.getStatus())) {
             throw new ServiceException("当前状态不可审核通过");
         }
 
-        // 1. 获取当前报价明细
         Integer quoteVer = order.getCurrentQuoteVersion();
         List<QuoteDetail> quoteDetails = quoteDetailMapper.selectList(new LambdaQueryWrapper<QuoteDetail>()
                 .eq(QuoteDetail::getQuoteId, quoteId)
                 .eq(QuoteDetail::getDetailVersion, quoteVer));
 
-        // 2. 初始化业务调整明细 (v1)
-        List<QuoteBusinessItem> businessItems = quoteDetails.stream().map(qd -> {
-            QuoteBusinessItem item = new QuoteBusinessItem();
-            item.setQuoteId(quoteId);
-            item.setDetailId(qd.getId());
-            item.setBusinessVersion(1); // 业务初始版本 v1
-            item.setLockStatus(false);
-            return item;
-        }).collect(Collectors.toList());
+        Integer oldBusinessVersion = order.getCurrentBusinessVersion() == null ? 0 : order.getCurrentBusinessVersion();
+        Integer newBusinessVersion = oldBusinessVersion + 1;
+
+        List<QuoteBusinessItem> businessItems = oldBusinessVersion == 0
+                ? businessVersionInitializer.initFirstBusinessVersion(quoteId, quoteDetails, newBusinessVersion)
+                : businessVersionInitializer.initFromReQuotedVersion(quoteId, quoteDetails, oldBusinessVersion, newBusinessVersion);
 
         businessItems.forEach(quoteBusinessMapper::insert);
 
-        // 3. CAS 更新主表 (状态 -> 2, 业务版本 -> 1)
         LambdaUpdateWrapper<QuoteOrder> updateWrapper = new LambdaUpdateWrapper<>();
         updateWrapper.set(QuoteOrder::getStatus, QuoteStatus.PENDING_BUSINESS)
                 .set(QuoteOrder::getCurrentHandlerId, nextHandlerId)
-                .set(QuoteOrder::getCurrentBusinessVersion, 1) // 设置业务版本
+                .set(QuoteOrder::getCurrentBusinessVersion, newBusinessVersion)
                 .eq(QuoteOrder::getId, quoteId)
                 .eq(QuoteOrder::getStatus, QuoteStatus.PENDING_AUDIT)
                 .eq(QuoteOrder::getCurrentHandlerId, SecurityUtils.getUserId());
@@ -142,9 +138,8 @@ public class QuoteProcessServiceImpl implements IQuoteProcessService {
             throw new ServiceException("审核通过失败：状态冲突");
         }
 
-        quoteLogService.record(quoteId, LogAction.AUDIT_PASS, nextHandlerId, "审核通过，转交业务: " + comment);
-
-        //广播审批状态修改
+        quoteLogService.record(quoteId, LogAction.AUDIT_PASS, nextHandlerId,
+                "审核通过，转交业务版本 v" + newBusinessVersion + ": " + comment);
         eventPublisher.publishEvent(new QuoteStateChangeEvent(this, quoteId, LogAction.AUDIT_PASS.name()));
     }
 
@@ -212,26 +207,8 @@ public class QuoteProcessServiceImpl implements IQuoteProcessService {
 
         Integer oldVer = order.getCurrentQuoteVersion();
 
-        // 1. 复制明细数据
-        List<QuoteDetail> oldDetails = quoteDetailMapper.selectList(new LambdaQueryWrapper<QuoteDetail>()
-                .eq(QuoteDetail::getQuoteId, quoteId)
-                .eq(QuoteDetail::getDetailVersion, oldVer));
-
-        if (oldDetails.isEmpty()) {
-            throw new ServiceException("当前版本无明细数据");
-        }
-
         Integer newVer = oldVer + 1;
-        List<QuoteDetail> newDetails = oldDetails.stream().map(d -> {
-            QuoteDetail newDetail = new QuoteDetail();
-            BeanUtils.copyProperties(d, newDetail, "id", "createTime", "updateTime");
-            newDetail.setDetailVersion(newVer);
-            newDetail.setLockStatus(false); // 新版本解锁
-            return newDetail;
-        }).collect(Collectors.toList());
-
-        // 批量保存会有性能开销，实际建议用 Service 的 saveBatch
-        newDetails.forEach(quoteDetailMapper::insert);
+        quoteVersionInitializer.cloneQuoteDetailsToNewVersion(quoteId, oldVer, newVer);
 
         // 2. CAS 更新主表版本号 (状态不变，还是 4)
         // 注意：这里不用 casUpdateStatus，因为状态没变，但要防止并发
@@ -337,22 +314,9 @@ public class QuoteProcessServiceImpl implements IQuoteProcessService {
         }
         Long currentUserId = SecurityUtils.getUserId();
 
-        // 1. 复制业务数据 (vN -> vN+1)
         Integer oldVer = order.getCurrentBusinessVersion();
         Integer newVer = oldVer + 1;
-
-        List<QuoteBusinessItem> oldItems = quoteBusinessMapper.selectList(new LambdaQueryWrapper<QuoteBusinessItem>()
-                .eq(QuoteBusinessItem::getQuoteId, quoteId)
-                .eq(QuoteBusinessItem::getBusinessVersion, oldVer));
-
-        List<QuoteBusinessItem> newItems = oldItems.stream().map(item -> {
-            QuoteBusinessItem newItem = new QuoteBusinessItem();
-            BeanUtils.copyProperties(item, newItem, "id", "createTime", "updateTime");
-            newItem.setBusinessVersion(newVer);
-            newItem.setLockStatus(false); // 解锁
-            return newItem;
-        }).collect(Collectors.toList());
-
+        List<QuoteBusinessItem> newItems = businessVersionInitializer.cloneForReAdjustBusiness(quoteId, oldVer, newVer);
         newItems.forEach(quoteBusinessMapper::insert);
 
         // 2. CAS 更新主表 (状态 -> 5, 处理人 -> 我)
@@ -369,6 +333,62 @@ public class QuoteProcessServiceImpl implements IQuoteProcessService {
         }
 
         quoteLogService.record(quoteId, LogAction.RE_OPEN, null, "业务重新调整，创建版本 v" + newVer);
+    }
+
+
+    @Override
+    public void withdrawToQuote(Long quoteId) {
+        QuoteOrder order = quoteManageService.getByIdSafe(quoteId);
+
+        List<String> allowed = Arrays.asList(
+                QuoteStatus.PENDING_AUDIT,
+                QuoteStatus.PENDING_BUSINESS,
+                QuoteStatus.RE_ADJUST_BUSINESS,
+                QuoteStatus.COMPLETED,
+                QuoteStatus.REJECT_TO_QUOTER,
+                QuoteStatus.REQUOTE_FROM_COMPLETED
+        );
+        if (!allowed.contains(order.getStatus())) {
+            throw new ServiceException("当前状态不可撤回到报价阶段");
+        }
+
+        Long currentUserId = SecurityUtils.getUserId();
+        if (!SecurityUtils.isAdmin() && !QuoteStatus.COMPLETED.equals(order.getStatus())
+                && !Objects.equals(currentUserId, order.getCurrentHandlerId())) {
+            throw new ServiceException("您没有权限操作此单据");
+        }
+
+        if (QuoteStatus.COMPLETED.equals(order.getStatus()) && !SecurityUtils.isAdmin()) {
+            QuoteLog lastFinishLog = quoteLogMapper.selectOne(new LambdaQueryWrapper<QuoteLog>()
+                    .select(QuoteLog::getOperatorId)
+                    .eq(QuoteLog::getQuoteId, quoteId)
+                    .eq(QuoteLog::getAction, LogAction.COMPLETED.name())
+                    .orderByDesc(QuoteLog::getCreateTime)
+                    .last("LIMIT 1"));
+            Long lastFinisherId = lastFinishLog == null ? null : lastFinishLog.getOperatorId();
+            if (!Objects.equals(currentUserId, lastFinisherId)) {
+                throw new ServiceException("无权操作：只能由最后完成人或管理员撤回");
+            }
+        }
+
+        Long targetId = quoteVersionInitializer.resolveReturnQuoterId(quoteId, order.getCreateBy());
+
+        LambdaUpdateWrapper<QuoteOrder> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.set(QuoteOrder::getStatus, QuoteStatus.DRAFT)
+                .set(QuoteOrder::getCurrentHandlerId, targetId)
+                .eq(QuoteOrder::getId, quoteId)
+                .eq(QuoteOrder::getStatus, order.getStatus());
+        if (!QuoteStatus.COMPLETED.equals(order.getStatus())) {
+            wrapper.eq(QuoteOrder::getCurrentHandlerId, currentUserId);
+        }
+
+        int rows = quoteOrderMapper.update(null, wrapper);
+        if (rows == 0) {
+            throw new ServiceException("撤回失败：单据状态已变更");
+        }
+
+        quoteLogService.record(quoteId, LogAction.RETURN_TO_QUOTE, targetId, "流程撤回到报价阶段");
+        eventPublisher.publishEvent(new QuoteStateChangeEvent(this, quoteId, LogAction.RETURN_TO_QUOTE.name()));
     }
 
     /**
