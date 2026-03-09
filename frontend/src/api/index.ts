@@ -1,4 +1,4 @@
-import axios, { type InternalAxiosRequestConfig, type AxiosResponse } from 'axios'
+import axios, { type InternalAxiosRequestConfig, type AxiosResponse, type AxiosRequestConfig } from 'axios'
 import { useUserStore } from '@/stores/auth/user' 
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { authManager } from './auth/auth-manager'
@@ -102,4 +102,9 @@ service.interceptors.response.use(
   }
 )
 
-export default service
+function request<T = unknown>(config: AxiosRequestConfig): Promise<T> {
+  return service.request(config) as Promise<T>
+}
+
+export { service }
+export default request

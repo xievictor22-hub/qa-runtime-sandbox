@@ -87,9 +87,10 @@
             </template>
           </el-table-column>
 
-        <el-table-column label="操作" width="180" align="center" fixed="right">
+        <el-table-column label="操作" width="260" align="center" fixed="right">
             <template #default="{ row }">
               <el-button link type="primary" icon="View" @click="handleDetail(row)">详情</el-button>
+              <el-button link type="warning" icon="Edit" @click="handleBusinessAdjust(row)" v-if="['2','5'].includes(row.status)">业务调整</el-button>
               <el-button link type="info" icon="Document" @click="handleLogs(row)">履历</el-button>
               <el-button link type="danger" icon="Delete" v-if="row.status === '0'" @click="handleDelete(row)">删除</el-button>
             </template>
@@ -207,6 +208,12 @@ const handleDetail = (row: QuoteOrder) =>
 router.push({
   path: `/quote/order/detail/${row.id}`,
   query: { sourceTab: activeTab.value } // 传递当前 tab 信息
+})
+
+const handleBusinessAdjust = (row: QuoteOrder) =>
+router.push({
+  path: `/quote/business-adjust/${row.id}`,
+  query: { sourceTab: activeTab.value }
 })
 /**
  * 点击删除按钮

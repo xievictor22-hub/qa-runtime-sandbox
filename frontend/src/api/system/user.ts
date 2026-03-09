@@ -1,4 +1,5 @@
 import request from '@/api/index'
+import type { PageResult } from '@/api/types'
 
 // 定义基础路径
 const BASE_URL = '/system/user'
@@ -26,10 +27,16 @@ export interface UserForm {
   remark?: string
 }
 
+export interface UserOption {
+  id: number
+  nickname: string
+  username?: string
+}
+
 // --- 接口函数 ---
 
 /** 获取用户分页列表 */
-export function getUserList(params: UserQuery) {
+export function getUserList(params: UserQuery): Promise<PageResult<UserForm>> {
   return request({
     url: `${BASE_URL}/list`,
     method: 'get',
@@ -38,7 +45,7 @@ export function getUserList(params: UserQuery) {
 }
 
 /** 新增用户 */
-export function addUser(data: UserForm) {
+export function addUser(data: UserForm): Promise<void> {
   return request({
     url: BASE_URL,
     method: 'post',
@@ -47,7 +54,7 @@ export function addUser(data: UserForm) {
 }
 
 /** 修改用户 */
-export function updateUser(data: UserForm) {
+export function updateUser(data: UserForm): Promise<void> {
   return request({
     url: BASE_URL,
     method: 'put',
@@ -56,7 +63,7 @@ export function updateUser(data: UserForm) {
 }
 
 /** 删除用户 */
-export function deleteUser(id: number) {
+export function deleteUser(id: number): Promise<void> {
   return request({
     url: `${BASE_URL}/${id}`,
     method: 'delete'
@@ -64,7 +71,7 @@ export function deleteUser(id: number) {
 }
 
 /** 批量删除 */
-export function deleteBatchUser(ids: number[]) {
+export function deleteBatchUser(ids: number[]): Promise<void> {
   return request({
     url: `${BASE_URL}/batch`,
     method: 'delete',
@@ -73,7 +80,7 @@ export function deleteBatchUser(ids: number[]) {
 }
 
 /** 获取用户已分配的角色ID */
-export function getUserRoleIds(userId: number) {
+export function getUserRoleIds(userId: number): Promise<number[]> {
   return request({
     url: `${BASE_URL}/${userId}/role`,
     method: 'get'
@@ -81,7 +88,7 @@ export function getUserRoleIds(userId: number) {
 }
 
 /** 提交角色分配 */
-export function assignUserRoles(userId: number, roleIds: number[]) {
+export function assignUserRoles(userId: number, roleIds: number[]): Promise<void> {
   return request({
     url: `${BASE_URL}/${userId}/role`,
     method: 'put',
@@ -90,7 +97,7 @@ export function assignUserRoles(userId: number, roleIds: number[]) {
 }
 
 // 获取用户精简列表
-export function listUserOption() {
+export function listUserOption(): Promise<UserOption[]> {
   return request({
     url: `${BASE_URL}/listAll`, // 你的后端接口地址
     method: 'get'
@@ -101,7 +108,14 @@ export function listUserOption() {
  * 导出用户数据
  * 注意：必须指定 responseType 为 'blob'
  */
-export function exportUserApi(params: any) {
+export interface UserExportQuery {
+  username?: string
+  phone?: string
+  status?: number
+  deptId?: number
+}
+
+export function exportUserApi(params: UserExportQuery): Promise<Blob> {
   return request({
     url: '/system/user/export',
     method: 'get',
@@ -114,7 +128,7 @@ export function exportUserApi(params: any) {
  * 导入用户数据
  * @param file 文件对象
  */
-export function importUserApi(file: File) {
+export function importUserApi(file: File): Promise<void> {
   const formData = new FormData();
   formData.append('file', file); // 'file' 必须与后端 @RequestPart("file") 名字一致
 

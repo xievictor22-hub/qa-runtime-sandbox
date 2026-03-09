@@ -103,10 +103,10 @@ export function selectQuoteDetail(detailId: string): Promise<ParentInfo> {
 }
 
 /** 导入明细 (覆盖上传) */
-export function importQuoteDetail(quoteId: string, file: File) {
+export function importQuoteDetail(quoteId: string, file: File): Promise<void> {
   const formData = new FormData()
   formData.append('file', file)
-  return request({
+  return request<void>({
     url: `/quote/detail/${quoteId}/import`,
     method: 'post',
     data: formData,
@@ -117,8 +117,8 @@ export function importQuoteDetail(quoteId: string, file: File) {
 }
 
 /** 修改单行明细 */
-export function updateQuoteDetail(data: ParentInfo) {
-  return request({
+export function updateQuoteDetail(data: ParentInfo): Promise<void> {
+  return request<void>({
     url: '/quote/detail/update',
     method: 'put',
     data
@@ -126,8 +126,8 @@ export function updateQuoteDetail(data: ParentInfo) {
 }
 
 /** 删除单行明细 (级联删除子件) */
-export function deleteQuoteDetail(id: string) {
-  return request({
+export function deleteQuoteDetail(id: string): Promise<void> {
+  return request<void>({
     url: `/quote/detail/${id}`,
     method: 'delete'
   })

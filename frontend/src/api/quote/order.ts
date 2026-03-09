@@ -35,7 +35,7 @@ export interface QuoteOrder {
   finalTotalPrice?: number;
   nextHandlerId?: number | null;
   otherFeesJson?: string | null;
-  params?: any;
+  params?: Record<string, unknown>;
   projectCode?: string | null;
   projectType?: string | null;
   remark?: string | null;
@@ -77,7 +77,14 @@ export function getQuoteSummary(id: string): Promise<QuoteSummary> {
 
 
 /** 获取报价单列表 */
-export function listQuoteOrder(params: QuoteOrderQuery) {
+export interface QuoteOrderListResult {
+  records: QuoteOrder[]
+  total?: number
+  pageNum?: number
+  pageSize?: number
+}
+
+export function listQuoteOrder(params: QuoteOrderQuery): Promise<QuoteOrderListResult> {
   return request({
     url: '/quote/order/list',
     method: 'get',
@@ -94,7 +101,7 @@ export function queryQuoteOrder(id:string):Promise<QuoteOrder>  {
 }
 
 /** 获取报价单详情 */
-export function getQuoteOrder(id: string){
+export function getQuoteOrder(id: string): Promise<QuoteOrder> {
   return request({
     url: `/quote/order/${id}`,
     method: 'get'
@@ -104,7 +111,7 @@ export function getQuoteOrder(id: string){
 
 
 /** 创建报价单 (草稿) */
-export function createQuoteOrder(data: QuoteOrderSearchCondition) {
+export function createQuoteOrder(data: QuoteOrderSearchCondition): Promise<QuoteOrder> {
   return request({
     url: '/quote/order/create',
     method: 'post',
@@ -113,7 +120,7 @@ export function createQuoteOrder(data: QuoteOrderSearchCondition) {
 }
 
 /** 修改报价单基础信息 */
-export function updateQuoteOrder(data: QuoteOrder) {
+export function updateQuoteOrder(data: QuoteOrder): Promise<void> {
   return request({
     url: '/quote/order/update',
     method: 'put',
@@ -122,7 +129,7 @@ export function updateQuoteOrder(data: QuoteOrder) {
 }
 
 /** 删除报价单 (仅草稿) */
-export function deleteQuoteOrder(id: string) {
+export function deleteQuoteOrder(id: string): Promise<void> {
   return request({
     url: `/quote/order/${id}`,
     method: 'delete'
@@ -139,7 +146,7 @@ export function getQuoteLogs(id: string): Promise<QuoteLog[]> {
 }
 
 /** 导出报价单 */
-export function exportQuoteOrder(id: string, columns: string[]) {
+export function exportQuoteOrder(id: string, columns: string[]): Promise<Blob> {
   return request({
     url: `/quote/order/export/${id}`,
     method: 'post',

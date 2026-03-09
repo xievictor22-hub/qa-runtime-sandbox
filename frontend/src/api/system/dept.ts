@@ -1,6 +1,34 @@
 import request from '@/api/index'
 
-export function listDept(query?: any) {
+export interface DeptItem {
+  deptId: number
+  parentId: number
+  deptName: string
+  orderNum: number
+  leader?: string
+  phone?: string
+  email?: string
+  status: string
+  children?: DeptItem[]
+}
+
+export interface DeptForm {
+  deptId?: number
+  parentId: number
+  deptName: string
+  orderNum: number
+  leader?: string
+  phone?: string
+  email?: string
+  status: string
+}
+
+export interface DeptQuery {
+  deptName?: string
+  status?: string
+}
+
+export function listDept(query?: DeptQuery): Promise<DeptItem[]> {
   return request({
     url: '/system/dept/list',
     method: 'get',
@@ -8,7 +36,7 @@ export function listDept(query?: any) {
   })
 }
 
-export function addDept(data: any) {
+export function addDept(data: DeptForm): Promise<void> {
   return request({
     url: '/system/dept',
     method: 'post',
@@ -16,7 +44,7 @@ export function addDept(data: any) {
   })
 }
 
-export function updateDept(data: any) {
+export function updateDept(data: DeptForm): Promise<void> {
   return request({
     url: '/system/dept',
     method: 'put',
@@ -24,7 +52,7 @@ export function updateDept(data: any) {
   })
 }
 
-export function delDept(deptId: number) {
+export function delDept(deptId: number): Promise<void> {
   return request({
     url: `/system/dept/${deptId}`,
     method: 'delete'
