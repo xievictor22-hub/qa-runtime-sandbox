@@ -77,6 +77,18 @@ public class QuoteProcessController {
     }
 
     @Anonymous
+    @PreAuthorize("hasAuthority('quote:process:withdraw')")
+    @Operation(summary = "撤回到报价阶段")
+    @Log(title = "撤回到报价", businessType = BusinessType.UPDATE)
+    @PostMapping("/{id}/withdraw")
+    public ApiResponse<Void> withdrawToQuote(@PathVariable Long id,
+                                             @RequestHeader(value = "X-Idempotency-Key", required = false) String idempotencyKey) {
+        guardIdempotent("withdraw", id, idempotencyKey);
+        processService.withdrawToQuote(id);
+        return ApiResponse.success(null);
+    }
+
+    @Anonymous
     @PreAuthorize("hasAuthority('quote:process:new-version')")
     @Operation(summary = "创建新报价版本")
     @Log(title = "创建新报价版本", businessType = BusinessType.UPDATE)
@@ -93,7 +105,7 @@ public class QuoteProcessController {
      * @param roleKey 角色标识 (如: auditor, quoter, business)
      */
     @Anonymous
-    @PreAuthorize("hasAnyAuthority('quote:process:submit','quote:process:audit-pass','quote:process:audit-reject','quote:process:new-version')")
+    @PreAuthorize("hasAnyAuthority('quote:process:submit','quote:process:audit-pass','quote:process:audit-reject','quote:process:new-version','quote:process:withdraw')")
     @GetMapping("/users/{roleKey}")
     public ApiResponse<List<SysUser>> getProcessUsers(@PathVariable String roleKey) {
         // 这里调用系统模块的方法，根据角色Key查询用户

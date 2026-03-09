@@ -27,36 +27,47 @@ public class QuoteBusinessPriceCalculator {
         item.setDetailId(detail.getId());
         item.setBusinessVersion(businessVersion);
 
-        item.setSalesUnitPrice(nvl(detail.getDistPrice()));
-        item.setSalesDiscount(ONE);
-        item.setSalesPoint(ZERO);
-        item.setSalesUnitAdjustAmount(ZERO);
+        BigDecimal quantity = nvl(detail.getQuantity());
 
-        item.setFactorySalesAdjustAmount(ZERO);
+        // 生产段初始化
         item.setFactoryCostUnitPrice(nvl(detail.getFactoryCostUnitPrice()));
-        item.setFactoryDiscounts(nvl(detail.getFactoryDiscounts()));
-        item.setFactoryUnitPrice(nvl(detail.getFactoryUnitPrice()));
-        item.setFactoryTotal(nvl(detail.getFactoryTotal()));
-        item.setFactoryProfit(nvl(detail.getFactoryProfit()));
-        item.setFactoryProfitRate(nvl(detail.getFactoryProfitRate()));
-        item.setCustomerFactoryTotal(nvl(detail.getFactoryTotal()));
-        item.setAdjustedFactoryProfitAmount(nvl(detail.getFactoryProfit()));
-        item.setAdjustedFactoryProfitRate(ZERO);
+        item.setFactoryProfitRate(ZERO);
+        item.setFactoryDiscounts(ONE);
+        item.setFactoryUnitPrice(mul2(item.getFactoryCostUnitPrice(), ONE.add(item.getFactoryProfitRate())));
+        item.setFactoryTotal(mul2(item.getFactoryUnitPrice(), quantity));
+        item.setFactoryProfit(mul2(item.getFactoryCostUnitPrice().multiply(item.getFactoryProfitRate()), quantity));
+        item.setFactorySalesAdjustAmount(ZERO);
+        item.setCustomerFactoryTotal(item.getFactoryTotal());
 
-        item.setInstallSalesAdjustAmount(ZERO);
+        // 安装段初始化
         item.setInstallCostUnitPrice(nvl(detail.getInstallCostUnitPrice()));
-        item.setInstallDiscounts(nvl(detail.getInstallDiscounts()));
-        item.setInstallUnitPrice(nvl(detail.getInstallUnitPrice()));
-        item.setInstallTotal(nvl(detail.getInstallTotal()));
-        item.setInstallProfit(nvl(detail.getInstallProfit()));
-        item.setInstallProfitRate(nvl(detail.getInstallProfitRate()));
-        item.setCustomerInstallTotal(nvl(detail.getInstallTotal()));
-        item.setAdjustedInstallProfitAmount(nvl(detail.getInstallProfit()));
-        item.setAdjustedInstallProfitRate(ZERO);
+        item.setInstallProfitRate(ZERO);
+        item.setInstallDiscounts(ONE);
+        item.setInstallUnitPrice(mul2(item.getInstallCostUnitPrice(), ONE.add(item.getInstallProfitRate())));
+        item.setInstallTotal(mul2(item.getInstallUnitPrice(), quantity));
+        item.setInstallProfit(mul2(item.getInstallCostUnitPrice().multiply(item.getInstallProfitRate()), quantity));
+        item.setInstallSalesAdjustAmount(ZERO);
+        item.setCustomerInstallTotal(item.getInstallTotal());
+
+        // 销售段初始化
+        item.setSalesCostUnitPrice(item.getFactoryUnitPrice().add(item.getInstallUnitPrice()).setScale(2, RoundingMode.HALF_UP));
+        item.setSalesPoint(ZERO);
+        item.setSalesDiscount(ONE);
+        item.setSalesUnitPrice(mul2(item.getSalesCostUnitPrice(), ONE.add(item.getSalesPoint())));
+        item.setSalesDiscountedUnitPrice(mul2(item.getSalesUnitPrice(), item.getSalesDiscount()));
+        item.setSalesTotal(mul2(item.getSalesDiscountedUnitPrice(), quantity));
+        item.setSalesProfit(ZERO);
+        item.setCustomerUnitPrice(item.getSalesUnitPrice());
+        item.setSalesUnitAdjustAmount(ZERO);
+        item.setCustomerTotalPrice(mul2(item.getCustomerUnitPrice(), quantity));
+
+        // 调整利润段初始化
+        item.setAdjustedFactoryProfitAmount(item.getFactoryProfit());
+        item.setAdjustedInstallProfitAmount(item.getInstallProfit());
 
         item.setLockStatus(false);
 
-        recalculate(item, null);
+        recalculate(item, quantity);
         return item;
     }
 
@@ -66,44 +77,41 @@ public class QuoteBusinessPriceCalculator {
     public void recalculate(QuoteBusinessItem item, BigDecimal quantity) {
         validate(item);
 
-        BigDecimal salesDiscountedUnitPrice = nvl(item.getSalesUnitPrice())
-                .multiply(nvl(item.getSalesDiscount()))
-                .setScale(2, RoundingMode.HALF_UP);
+        BigDecimal qty = quantity == null ? ZERO : quantity;
+
+        item.setFactoryUnitPrice(mul2(nvl(item.getFactoryCostUnitPrice()), ONE.add(nvl(item.getFactoryProfitRate()))));
+        item.setFactoryTotal(mul2(nvl(item.getFactoryUnitPrice()), qty));
+        item.setFactoryProfit(mul2(nvl(item.getFactoryCostUnitPrice()).multiply(nvl(item.getFactoryProfitRate())), qty));
+        item.setCustomerFactoryTotal(nvl(item.getCustomerFactoryTotal()).setScale(2, RoundingMode.HALF_UP));
+        item.setAdjustedFactoryProfitAmount(nvl(item.getCustomerFactoryTotal())
+                .subtract(nvl(item.getFactoryCostUnitPrice()).multiply(qty)).setScale(2, RoundingMode.HALF_UP));
+
+        item.setInstallUnitPrice(mul2(nvl(item.getInstallCostUnitPrice()), ONE.add(nvl(item.getInstallProfitRate()))));
+        item.setInstallTotal(mul2(nvl(item.getInstallUnitPrice()), qty));
+        item.setInstallProfit(mul2(nvl(item.getInstallCostUnitPrice()).multiply(nvl(item.getInstallProfitRate())), qty));
+        item.setCustomerInstallTotal(nvl(item.getCustomerInstallTotal()).setScale(2, RoundingMode.HALF_UP));
+        item.setAdjustedInstallProfitAmount(nvl(item.getCustomerInstallTotal())
+                .subtract(nvl(item.getInstallCostUnitPrice()).multiply(qty)).setScale(2, RoundingMode.HALF_UP));
+
+        item.setSalesCostUnitPrice(nvl(item.getFactoryUnitPrice()).add(nvl(item.getInstallUnitPrice())).setScale(2, RoundingMode.HALF_UP));
+        item.setSalesUnitPrice(mul2(nvl(item.getSalesCostUnitPrice()), ONE.add(nvl(item.getSalesPoint()))));
+        BigDecimal salesDiscountedUnitPrice = mul2(nvl(item.getSalesUnitPrice()), ONE);
         item.setSalesDiscountedUnitPrice(salesDiscountedUnitPrice);
 
-        BigDecimal customerUnitPrice = salesDiscountedUnitPrice
-                .add(nvl(item.getSalesUnitAdjustAmount()))
-                .setScale(2, RoundingMode.HALF_UP);
+        BigDecimal customerUnitPrice = nvl(item.getCustomerUnitPrice()).setScale(2, RoundingMode.HALF_UP);
         item.setCustomerUnitPrice(customerUnitPrice);
+        item.setSalesUnitAdjustAmount(customerUnitPrice.subtract(nvl(item.getSalesUnitPrice())).setScale(2, RoundingMode.HALF_UP));
 
-        if (quantity != null) {
-            item.setSalesTotal(salesDiscountedUnitPrice.multiply(quantity).setScale(2, RoundingMode.HALF_UP));
-            item.setCustomerTotalPrice(customerUnitPrice.multiply(quantity).setScale(2, RoundingMode.HALF_UP));
-        } else {
-            if (item.getSalesTotal() == null) item.setSalesTotal(ZERO);
-            if (item.getCustomerTotalPrice() == null) item.setCustomerTotalPrice(ZERO);
-        }
+        item.setSalesTotal(mul2(salesDiscountedUnitPrice, qty));
+        item.setCustomerTotalPrice(mul2(customerUnitPrice, qty));
 
-        item.setCustomerFactoryTotal(nvl(item.getCustomerFactoryTotal()).add(nvl(item.getFactorySalesAdjustAmount())).setScale(2, RoundingMode.HALF_UP));
-        item.setCustomerInstallTotal(nvl(item.getCustomerInstallTotal()).add(nvl(item.getInstallSalesAdjustAmount())).setScale(2, RoundingMode.HALF_UP));
+        BigDecimal factoryBase = nvl(item.getFactoryCostUnitPrice()).multiply(qty);
+        item.setAdjustedFactoryProfitRate(factoryBase.compareTo(ZERO) == 0 ? ZERO :
+                nvl(item.getAdjustedFactoryProfitAmount()).divide(factoryBase, 4, RoundingMode.HALF_UP));
 
-        if (nvl(item.getCustomerFactoryTotal()).compareTo(ZERO) != 0) {
-            item.setAdjustedFactoryProfitRate(
-                    nvl(item.getAdjustedFactoryProfitAmount())
-                            .divide(nvl(item.getCustomerFactoryTotal()), 4, RoundingMode.HALF_UP)
-            );
-        } else {
-            item.setAdjustedFactoryProfitRate(ZERO);
-        }
-
-        if (nvl(item.getCustomerInstallTotal()).compareTo(ZERO) != 0) {
-            item.setAdjustedInstallProfitRate(
-                    nvl(item.getAdjustedInstallProfitAmount())
-                            .divide(nvl(item.getCustomerInstallTotal()), 4, RoundingMode.HALF_UP)
-            );
-        } else {
-            item.setAdjustedInstallProfitRate(ZERO);
-        }
+        BigDecimal installBase = nvl(item.getInstallCostUnitPrice()).multiply(qty);
+        item.setAdjustedInstallProfitRate(installBase.compareTo(ZERO) == 0 ? ZERO :
+                nvl(item.getAdjustedInstallProfitAmount()).divide(installBase, 4, RoundingMode.HALF_UP));
     }
 
     public void validate(QuoteBusinessItem item) {
@@ -121,5 +129,10 @@ public class QuoteBusinessPriceCalculator {
 
     private BigDecimal nvl(BigDecimal v) {
         return v == null ? ZERO : v;
+    }
+
+
+    private BigDecimal mul2(BigDecimal a, BigDecimal b) {
+        return nvl(a).multiply(nvl(b)).setScale(2, RoundingMode.HALF_UP);
     }
 }

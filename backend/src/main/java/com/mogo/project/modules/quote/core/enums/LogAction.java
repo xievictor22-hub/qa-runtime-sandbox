@@ -17,6 +17,7 @@ public enum LogAction {
     BUSINESS_SAVE("保存价格调整"), // 保存折扣/最终价
     COMPLETED("确认完成"),        // 2 -> 3
     RE_OPEN("发起重新调整"),      // 3 -> 5
+    RETURN_TO_QUOTE("撤回到报价"), // 1/2/3/5 -> 0
 
     // --- 系统/管理员动作 ---
     ASSIGN("指派处理人"),         // 管理员干预
