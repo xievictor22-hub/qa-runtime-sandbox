@@ -53,6 +53,18 @@ export interface BasePriceVO {
   // 是否计入折件
   isFolding?: number;
 }
+
+export interface BaseProductCreatePayload {
+  projectType: number
+  process1: string
+  process2?: string
+  process3?: string
+  process4?: string
+  unit: string
+  unitPrice: number
+  quoteFormula: number
+  pointCoefficient: number
+}
 // 产品库产品 VO
 export interface ProductLibraryVo  {
   id: string;
@@ -116,7 +128,7 @@ export async function importBasePrice(form: ImportForm) {
 }
 
 /** 3. 导出底价库 */
-export async function exportBasePrice(params: string): Promise<{data:Blob}> {
+export async function exportBasePrice(params: string): Promise<Blob> {
   return request({
     url: '/quote/import/download/'+params,
     method: 'post',
@@ -139,7 +151,7 @@ export async function listProductLibrary(params: BasePriceQuery): Promise<PageRe
   })
 }
 
-export async function listBaseProducts(params:any): Promise<PageResult<BasePriceVO>> {
+export async function listBaseProducts(params: ProductLibrarySearchDto): Promise<PageResult<BasePriceVO>> {
   return request({
     url: '/quote/base/listProductLibrary',
     method: 'get',
@@ -147,7 +159,7 @@ export async function listBaseProducts(params:any): Promise<PageResult<BasePrice
   })
 }
 
-export function addBasePriceItem(data: any, version: string) {
+export function addBasePriceItem(data: BaseProductCreatePayload, version: string): Promise<void> {
   return request({
     url: `/quote/import/add/${version}`, // 请根据你的实际 Controller 路径前缀调整，这里假设是 /quote/base
     method: 'post',
@@ -162,4 +174,3 @@ export async function getProcessTreeApi(params:TreeQuery): Promise<ProcessNode[]
     params
   })
 }
-

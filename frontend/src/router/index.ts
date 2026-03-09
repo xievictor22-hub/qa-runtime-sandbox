@@ -20,11 +20,17 @@ export const constantRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/dashboard/index.vue'), // 仪表盘页面
         meta: { title: '首页', icon: 'HomeFilled' }
       },
-       {
+      {
         path: 'user/profile', // 注意：前端访问路径 /user/profile
         name: 'UserProfile',
         component: () => import('@/views/system/user/profile/index.vue'),
         meta: { title: '个人中心', hidden: true } // hidden: true 侧边栏不显示
+      },
+      {
+        path: 'quote/business-adjust/:id',
+        name: 'QuoteBusinessAdjust',
+        component: () => import('@/views/quote/order/business-adjust/index.vue'),
+        meta: { title: '业务员调整', hidden: true }
       }
     ]
   },

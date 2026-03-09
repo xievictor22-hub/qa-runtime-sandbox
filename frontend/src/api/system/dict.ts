@@ -1,4 +1,5 @@
 import request from '@/api/index';
+import type { PageResult } from '@/api/types'
 
 // ==========================================
 // TS 类型定义 (让你的代码有代码提示)
@@ -55,7 +56,7 @@ interface PageQuery {
  * 对应后端: @GetMapping("/system/dict/data/type/{dictType}")
  * @param dictType 字典类型 (如 sys_user_sex)
  */
-export function getDicts(dictType: string) {
+export function getDicts(dictType: string): Promise<DictData[]> {
   return request({
     url: `/system/dict/data/type/${dictType}`,
     method: 'get'
@@ -69,7 +70,7 @@ export function getDicts(dictType: string) {
 /**
  * 查询字典类型列表
  */
-export function listType(query: DictTypeQuery) {
+export function listType(query: DictTypeQuery): Promise<PageResult<DictType>> {
   return request({
     url: '/system/dict/type/list',
     method: 'get',
@@ -80,7 +81,7 @@ export function listType(query: DictTypeQuery) {
 /**
  * 查询字典类型详细
  */
-export function getType(dictId: number) {
+export function getType(dictId: number): Promise<DictType> {
   return request({
     url: `/system/dict/type/${dictId}`,
     method: 'get'
@@ -90,7 +91,7 @@ export function getType(dictId: number) {
 /**
  * 新增字典类型
  */
-export function addType(data: DictType) {
+export function addType(data: DictType): Promise<void> {
   return request({
     url: '/system/dict/type',
     method: 'post',
@@ -101,7 +102,7 @@ export function addType(data: DictType) {
 /**
  * 修改字典类型
  */
-export function updateType(data: DictType) {
+export function updateType(data: DictType): Promise<void> {
   return request({
     url: '/system/dict/type',
     method: 'put',
@@ -112,7 +113,7 @@ export function updateType(data: DictType) {
 /**
  * 删除字典类型
  */
-export function delType(dictIds: number | number[]) {
+export function delType(dictIds: number | number[]): Promise<void> {
   return request({
     url: `/system/dict/type/${dictIds}`,
     method: 'delete'
@@ -122,7 +123,7 @@ export function delType(dictIds: number | number[]) {
 /**
  * 刷新字典缓存 (重要)
  */
-export function refreshCache() {
+export function refreshCache(): Promise<void> {
   return request({
     url: '/system/dict/type/refreshCache',
     method: 'delete'
@@ -136,7 +137,7 @@ export function refreshCache() {
 /**
  * 查询字典数据列表
  */
-export function listData(query: DictDataQuery) {
+export function listData(query: DictDataQuery): Promise<PageResult<DictData>> {
   return request({
     url: '/system/dict/data/list',
     method: 'get',
@@ -147,7 +148,7 @@ export function listData(query: DictDataQuery) {
 /**
  * 查询字典数据详细
  */
-export function getData(dictCode: number) {
+export function getData(dictCode: number): Promise<DictData> {
   return request({
     url: `/system/dict/data/${dictCode}`,
     method: 'get'
@@ -157,7 +158,7 @@ export function getData(dictCode: number) {
 /**
  * 新增字典数据
  */
-export function addData(data: DictData) {
+export function addData(data: DictData): Promise<void> {
   return request({
     url: '/system/dict/data',
     method: 'post',
@@ -168,7 +169,7 @@ export function addData(data: DictData) {
 /**
  * 修改字典数据
  */
-export function updateData(data: DictData) {
+export function updateData(data: DictData): Promise<void> {
   return request({
     url: '/system/dict/data',
     method: 'put',
@@ -179,7 +180,7 @@ export function updateData(data: DictData) {
 /**
  * 删除字典数据
  */
-export function delData(dictCodes: number | number[]) {
+export function delData(dictCodes: number | number[]): Promise<void> {
   return request({
     url: `/system/dict/data/${dictCodes}`,
     method: 'delete'

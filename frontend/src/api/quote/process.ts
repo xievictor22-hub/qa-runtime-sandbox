@@ -22,7 +22,7 @@ function createIdempotencyKey(action: string, quoteId: string) {
 
 
 /** 提交审核 */
-export function submitAudit(data: ProcessDto) {
+export function submitAudit(data: ProcessDto): Promise<void> {
   return request({
     url: '/quote/process/submit',
     method: 'post',
@@ -34,7 +34,7 @@ export function submitAudit(data: ProcessDto) {
 }
 
 /** 审核通过 */
-export function auditPass(data: ProcessDto) {
+export function auditPass(data: ProcessDto): Promise<void> {
   return request({
     url: '/quote/process/audit-pass',
     method: 'post',
@@ -46,7 +46,7 @@ export function auditPass(data: ProcessDto) {
 }
 
 /** 审核驳回 */
-export function auditReject(data: ProcessDto) {
+export function auditReject(data: ProcessDto): Promise<void> {
   return request({
     url: '/quote/process/audit-reject',
     method: 'post',
@@ -58,7 +58,7 @@ export function auditReject(data: ProcessDto) {
 }
 
 /** 创建新报价版本 (被驳回后) */
-export function createNewVersion(quoteId: string) {
+export function createNewVersion(quoteId: string): Promise<void> {
   return request({
     url: `/quote/process/${quoteId}/new-version`,
     method: 'post',

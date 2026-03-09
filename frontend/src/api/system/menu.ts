@@ -24,10 +24,22 @@ export interface MenuForm {
   status: number  // 1正常 0停用
 }
 
+export interface MenuTreeItem extends MenuForm {
+  children?: MenuTreeItem[]
+}
+
+export interface AppRouteRecord {
+  path: string
+  name?: string
+  component?: string
+  meta?: Record<string, unknown>
+  children?: AppRouteRecord[]
+}
+
 // --- 接口函数 ---
 
 /** 获取菜单列表 (树形) */
-export function listMenu(params?: MenuQuery) {
+export function listMenu(params?: MenuQuery): Promise<MenuTreeItem[]> {
   return request({
     url: `${BASE_URL}/list`,
     method: 'get',
@@ -36,7 +48,7 @@ export function listMenu(params?: MenuQuery) {
 }
 
 /** 新增菜单 */
-export function addMenu(data: MenuForm) {
+export function addMenu(data: MenuForm): Promise<void> {
   return request({
     url: BASE_URL,
     method: 'post',
@@ -45,7 +57,7 @@ export function addMenu(data: MenuForm) {
 }
 
 /** 修改菜单 */
-export function updateMenu(data: MenuForm) {
+export function updateMenu(data: MenuForm): Promise<void> {
   return request({
     url: BASE_URL,
     method: 'put',
@@ -54,7 +66,7 @@ export function updateMenu(data: MenuForm) {
 }
 
 /** 删除菜单 */
-export function delMenu(menuId: number) {
+export function delMenu(menuId: number): Promise<void> {
   return request({
     url: `${BASE_URL}/${menuId}`,
     method: 'delete'
@@ -62,7 +74,7 @@ export function delMenu(menuId: number) {
 }
 
 /** 获取动态路由 */
-export function getRouters() {
+export function getRouters(): Promise<AppRouteRecord[]> {
   return request({
     url: '/system/menu/getRouters',
     method: 'get'

@@ -11,10 +11,10 @@
       </div>
       
       <div class="space-x-2 flex items-center">
-        <el-button size="small" @click="$emit('toggle-other-cost')">其他费用</el-button>
-        <el-button size="small" @click="$emit('toggle-summary')">费用合计</el-button>
-        
-        
+        <el-button v-if="!hideOtherCostToggle" size="small" @click="$emit('toggle-other-cost')">其他费用</el-button>
+        <el-button v-if="!hideSummaryToggle" size="small" @click="$emit('toggle-summary')">费用合计</el-button>
+        <el-button v-if="canShowBusinessAdjustButton" size="small" type="warning" icon="Edit" @click="goBusinessAdjust">业务调整</el-button>
+
         <el-button v-if="hasPerm('submit')" size="small" type="primary" icon="Promotion" @click="dialogType = 'submit'">提交</el-button>
         <el-button v-if="hasPerm('new-version')" size="small" icon="CopyDocument" @click="handleNewVersion">新版本</el-button>
 
@@ -65,7 +65,7 @@
 <script setup lang="ts">
 import { computed, ref, reactive, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { useRoute } from 'vue-router' // 导入路由
+import { useRoute, useRouter } from 'vue-router' // 导入路由
 import { useTagsViewStore } from '@/stores/system/tagsView' // 导入标签页管理
 import LogDrawer from '../components/LogDrawer.vue' // 引入组件
 import { submitAudit, auditPass, auditReject, createNewVersion,getProcessUsers,ProcessUser } from '@/api/quote/process'
@@ -73,9 +73,19 @@ import { finishBusiness, reAdjustBusiness } from '@/api/quote/business'
 
 const route = useRoute()
 const tagsViewStore = useTagsViewStore()
+const router = useRouter()
 
 
-const props = defineProps<{ info: any }>()
+const props = withDefaults(defineProps<{ 
+  info: any,
+  hideSummaryToggle?: boolean,
+  hideOtherCostToggle?: boolean,
+  hideBusinessAdjustButton?: boolean,
+}>(), {
+  hideSummaryToggle: false,
+  hideOtherCostToggle: false,
+  hideBusinessAdjustButton: false,
+})
 const emit = defineEmits(['refresh','back','toggle-other-cost','toggle-summary'])
 
 // 弹窗表单
@@ -105,6 +115,18 @@ const handleBack = () => {
   // 3. 通知父组件（可选）
   emit('back')
 }
+
+
+const goBusinessAdjust = () => {
+  router.push({
+    path: `/quote/business-adjust/${props.info.id}`,
+    query: { sourceTab: route.query.sourceTab || 'all' }
+  })
+}
+
+const canShowBusinessAdjustButton = computed(() => {
+  return hasPerm('business-edit') && ['2', '5'].includes(props.info.status) && !props.hideBusinessAdjustButton
+})
 
 // 【核心】通用权限判断方法
 const hasPerm = (code: string) => {

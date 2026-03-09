@@ -10,7 +10,7 @@ export interface ImportQuoteParams {
 /**
  * 上传 Excel
  */
-export function uploadQuoteExcel(file: File, params: ImportQuoteParams) {
+export function uploadQuoteExcel(file: File, params: ImportQuoteParams): Promise<void> {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('version', params.version)
@@ -18,7 +18,7 @@ export function uploadQuoteExcel(file: File, params: ImportQuoteParams) {
     formData.append('description', params.description)
   }
 
-  return request({
+  return request<void>({
     url: '/api/quote/import/upload',
     method: 'post',
     data: formData,

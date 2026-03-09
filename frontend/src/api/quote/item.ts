@@ -63,7 +63,7 @@ export function listDetailItems(detailId: string): Promise<QuoteDetailItemVO[]> 
 }
 
 /** 添加子件 */
-export function addDetailItem(data: QuoteDetailItemAddDto) {
+export function addDetailItem(data: QuoteDetailItemAddDto): Promise<void> {
   return request({
     url: '/quote/item/add',
     method: 'post',
@@ -72,7 +72,7 @@ export function addDetailItem(data: QuoteDetailItemAddDto) {
 }
 
 /** 修改子件 只修改数量、单价、总价 */
-export function updateDetailItem(data: QuoteDetailItemUpdateDto) {
+export function updateDetailItem(data: QuoteDetailItemUpdateDto): Promise<void> {
   return request({
     url: '/quote/item/update',
     method: 'put',
@@ -81,7 +81,7 @@ export function updateDetailItem(data: QuoteDetailItemUpdateDto) {
 }
 
 /** 删除子件 */
-export function deleteDetailItem(id: string) {
+export function deleteDetailItem(id: string): Promise<void> {
   return request({
     url: `/quote/item/${id}`,
     method: 'delete'

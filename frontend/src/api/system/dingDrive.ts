@@ -1,8 +1,8 @@
-import request, { ApiResponse } from '@/api/index'
+import request from '@/api/index'
 
 // 上传文件
-export function uploadFile(data: FormData) {
-  return request<any, ApiResponse<string>>({
+export function uploadFile(data: FormData): Promise<string> {
+  return request({
     url: '/system/ding-drive/upload',
     method: 'post',
     data: data,
@@ -13,4 +13,3 @@ export function uploadFile(data: FormData) {
     }
   })
 }
-
